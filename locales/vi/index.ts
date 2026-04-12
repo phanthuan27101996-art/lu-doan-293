@@ -32,6 +32,7 @@ import hoSo from './ho-so.json';
 import kho from './kho.json';
 import truyenThong from './truyen-thong.json';
 import trangTin from './trang-tin.json';
+import congVan from './cong-van.json';
 
 const vi = {
   ...(common as Record<string, string>),
@@ -64,6 +65,7 @@ const vi = {
   ...(kho as Record<string, string>),
   ...(truyenThong as Record<string, string>),
   ...(trangTin as Record<string, string>),
+  ...(congVan as Record<string, string>),
 };
 
 export default vi;

@@ -23,7 +23,7 @@ import { useCreateTrangTin, useUpdateTrangTin } from '../hooks/use-trang-tin';
 import { useEmployees } from '../../he-thong/nhan-vien/hooks/use-nhan-vien';
 import { collectImageUrlsFromItems } from '../services/trang-tin-service';
 import { useAuthStore } from '../../../store/useStore';
-import { resolveQuanNhanIdForUser } from '../utils/resolve-current-quan-nhan';
+import { resolveQuanNhanIdForUser } from '@/lib/resolve-quan-nhan-for-auth-user';
 
 interface Props {
   initialData?: TrangTin | null;

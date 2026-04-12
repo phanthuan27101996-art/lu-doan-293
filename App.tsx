@@ -28,6 +28,8 @@ const PositionPage = lazy(() => import('./features/he-thong/chuc-vu/index'));
 const EmployeeProfilePreviewPage = lazy(() => import('./features/he-thong/nhan-vien/EmployeeProfilePreviewPage'));
 const TruyenThongPage = lazy(() => import('./features/truyen-thong/TruyenThongPage'));
 const TrangTinPage = lazy(() => import('./features/trang-tin/index'));
+const TaiLieuPage = lazy(() => import('./features/tai-lieu/index'));
+const CongVanPage = lazy(() => import('./features/cong-van/index'));
 
 /** Chỉ spinner primary, không chữ – tránh "đang tải 2 lần" với strip trong trang */
 const PageFallback = () => (
@@ -67,8 +69,8 @@ const App = () => {
                     {/* Module một cấp */}
                     <Route path="/truyen-thong" element={<WithPageSuspense><TruyenThongPage /></WithPageSuspense>} />
                     <Route path="/trang-tin" element={<WithPageSuspense><TrangTinPage /></WithPageSuspense>} />
-                    <Route path="/tai-lieu" element={<AppModulePlaceholder titleKey="nav.module.taiLieu" />} />
-                    <Route path="/cong-van" element={<AppModulePlaceholder titleKey="nav.module.congVan" />} />
+                    <Route path="/tai-lieu" element={<WithPageSuspense><TaiLieuPage /></WithPageSuspense>} />
+                    <Route path="/cong-van" element={<WithPageSuspense><CongVanPage /></WithPageSuspense>} />
                     <Route path="/moi-tuan-mot-dieu-luat" element={<AppModulePlaceholder titleKey="nav.module.moiTuanMotDieuLuat" />} />
                     <Route path="/moi-ngay-mot-loi-day-bac-ho" element={<AppModulePlaceholder titleKey="nav.module.moiNgayMotLoiDayBacHo" />} />
                     <Route path="/thi-trac-nghiem" element={<AppModulePlaceholder titleKey="nav.module.thiTracNghiem" />} />
