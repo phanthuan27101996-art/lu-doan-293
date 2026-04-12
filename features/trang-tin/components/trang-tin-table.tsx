@@ -1,0 +1,178 @@
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Edit, Trash2, ImageIcon, Newspaper } from 'lucide-react';
+import type { TrangTin } from '../core/types';
+import { useTrangTinStore } from '../store/useTrangTinStore';
+import { cn, formatDate } from '../../../lib/utils';
+import GenericTable from '../../../components/shared/GenericTable';
+
+interface Props {
+  data: TrangTin[];
+  isLoading: boolean;
+  onEdit: (item: TrangTin) => void;
+  onDelete: (id: string) => void;
+  onView: (item: TrangTin) => void;
+}
+
+const TrangTinTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onView }) => {
+  const { t } = useTranslation();
+  const {
+    columns,
+    pagination,
+    setPage,
+    setPageSize,
+    selectedIds,
+    toggleSelection,
+    toggleAllSelection,
+    sort,
+    setSort,
+    resizeColumn,
+  } = useTrangTinStore();
+
+  const renderCell = (colId: string, item: TrangTin) => {
+    switch (colId) {
+      case 'ngay_dang':
+        return item.ngay_dang ? (
+          <span className="text-body-sm text-muted-foreground tabular-nums">{formatDate(item.ngay_dang)}</span>
+        ) : (
+          <span className="text-xs text-muted-foreground italic">—</span>
+        );
+      case 'tieu_de':
+        return (
+          <div className="flex items-start gap-2 min-w-0">
+            <Newspaper size={14} className="text-primary shrink-0 mt-0.5" aria-hidden />
+            <div className="flex flex-col min-w-0">
+              <span className="font-semibold text-foreground text-sm line-clamp-2">{item.tieu_de}</span>
+              <span className="text-xs text-muted-foreground font-mono truncate">id {item.id}</span>
+            </div>
+          </div>
+        );
+      case 'ten_nguoi_tao':
+        return (
+          <span className="text-body-sm text-foreground truncate block max-w-[200px]">
+            {item.ten_nguoi_tao ?? '—'}
+          </span>
+        );
+      case 'tg_cap_nhat':
+        return item.tg_cap_nhat ? (
+          <span className="text-body-sm text-muted-foreground tabular-nums">{formatDate(item.tg_cap_nhat)}</span>
+        ) : (
+          <span className="text-xs text-muted-foreground italic">—</span>
+        );
+      case 'actions':
+        return (
+          <div className="flex items-center justify-center gap-0.5">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(item);
+              }}
+              className="p-2 text-primary hover:bg-primary/10 rounded-md transition-all"
+              aria-label={t('common.edit')}
+            >
+              <Edit size={15} />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(item.id);
+              }}
+              className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-all"
+              aria-label={t('common.delete')}
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const renderMobileCard = (item: TrangTin, isSelected: boolean) => (
+    <div
+      key={item.id}
+      onClick={() => onView(item)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onView(item);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      className={cn(
+        'bg-card rounded-xl border p-3.5 shadow-sm transition-all active:scale-[0.98]',
+        isSelected ? 'border-primary ring-2 ring-primary/10' : 'border-border',
+      )}
+    >
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <h4 className="font-semibold text-foreground text-sm line-clamp-2 flex-1">{item.tieu_de}</h4>
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={() => toggleSelection(item.id)}
+          onClick={(e) => e.stopPropagation()}
+          className="w-4 h-4 rounded border-border text-primary accent-primary cursor-pointer shrink-0"
+          aria-label={t('common.select')}
+        />
+      </div>
+      <p className="text-xs text-muted-foreground mb-2">{formatDate(item.ngay_dang)}</p>
+      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
+        <ImageIcon size={12} />
+        {t('trangTin.table.imagesCount', { count: item.hinh_anh?.length ?? 0 })}
+      </div>
+      <div className="flex justify-end gap-1.5 pt-2 border-t border-border">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(item);
+          }}
+          className="p-2 text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all"
+        >
+          <Edit size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(item.id);
+          }}
+          className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 rounded-lg transition-all"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <GenericTable
+      data={data}
+      columns={columns}
+      isLoading={isLoading}
+      loadingText={t('common.loadingData')}
+      selectedIds={selectedIds}
+      onToggleSelection={toggleSelection}
+      onToggleAll={toggleAllSelection}
+      page={pagination.page}
+      pageSize={pagination.pageSize}
+      onPageChange={setPage}
+      onPageSizeChange={setPageSize}
+      sort={sort}
+      onSort={setSort}
+      renderCell={renderCell}
+      renderMobileCard={renderMobileCard}
+      onRowClick={onView}
+      keyExtractor={(item) => item.id}
+      onResizeColumn={resizeColumn}
+      stickyLeftCount={1}
+      emptyTitle={t('trangTin.table.empty')}
+    />
+  );
+};
+
+export default TrangTinTable;

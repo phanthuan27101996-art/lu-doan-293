@@ -1,0 +1,21 @@
+{
+  "truyenThong.subtitle": "Nội dung truyền thống đơn vị",
+  "truyenThong.loadError": "Không tải được dữ liệu.",
+  "truyenThong.loading": "Đang tải",
+  "truyenThong.heroTitle": "Truyền thống",
+  "truyenThong.heroDesc": "Theo dõi và cập nhật nội dung hiển thị cho toàn đơn vị.",
+  "truyenThong.action.edit": "Chỉnh sửa",
+  "truyenThong.action.cancel": "Huỷ",
+  "truyenThong.action.save": "Lưu",
+  "truyenThong.action.saving": "Đang lưu…",
+  "truyenThong.section.content": "Nội dung",
+  "truyenThong.section.meta": "Thông tin cập nhật",
+  "truyenThong.field.thongTin": "Thông tin truyền thống",
+  "truyenThong.field.updatedAt": "Cập nhật lần cuối",
+  "truyenThong.field.id": "Mã bản ghi",
+  "truyenThong.previewRegion": "Xem trước nội dung",
+  "truyenThong.emptyBody": "Chưa có nội dung. Chọn Chỉnh sửa để thêm thông tin.",
+  "truyenThong.validation.maxLength": "Nội dung không được vượt quá {{max}} ký tự.",
+  "truyenThong.toast.saveSuccess": "Đã lưu nội dung truyền thống.",
+  "truyenThong.toast.saveError": "Lưu thất bại"
+}
