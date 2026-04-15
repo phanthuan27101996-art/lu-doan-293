@@ -15,7 +15,6 @@ import { toast } from 'sonner';
 import { DIALOG_SIZE } from '../lib/dialog-sizes';
 import { cn } from '../lib/utils';
 import { isValidVnPhone, normalizeVnPhone } from '../lib/phone-auth';
-import { AUTH_DEMO_ACCOUNT_PHONE } from '../lib/registered-phones';
 import { isMock } from '../lib/data/config';
 import { getAuthService } from '../lib/supabase/auth';
 
@@ -30,9 +29,7 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
-  const [phoneDigits, setPhoneDigits] = useState(() =>
-    isMock() ? normalizeVnPhone(AUTH_DEMO_ACCOUNT_PHONE).replace(/\D/g, '').slice(0, 10) : '',
-  );
+  const [phoneDigits, setPhoneDigits] = useState('');
   const [phoneError, setPhoneError] = useState<string | undefined>();
 
   const loginSchema = useMemo(
