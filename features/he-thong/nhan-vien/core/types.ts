@@ -11,6 +11,8 @@ export interface Employee {
   chuc_vu_id: string | null;
   ten_chuc_vu?: string;
   anh_dai_dien?: string | null;
+  /** Bảng danh_sach_quan_nhan — TRUE: được dùng module Phân quyền. */
+  is_admin?: boolean;
   tg_tao?: string | null;
   tg_cap_nhat?: string | null;
 }

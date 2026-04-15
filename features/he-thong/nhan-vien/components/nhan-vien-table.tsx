@@ -12,9 +12,19 @@ interface Props {
   onEdit: (item: Employee) => void;
   onDelete: (id: string) => void;
   onView: (item: Employee) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
-const EmployeeTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onView }) => {
+const EmployeeTable: React.FC<Props> = ({
+  data,
+  isLoading,
+  onEdit,
+  onDelete,
+  onView,
+  canUpdate = true,
+  canDelete = true,
+}) => {
   const { t } = useTranslation();
   const {
     columns,
@@ -71,28 +81,35 @@ const EmployeeTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
           <span className="text-xs text-muted-foreground italic">—</span>
         );
       case 'actions':
+        if (!canUpdate && !canDelete) {
+          return <span className="text-xs text-muted-foreground">—</span>;
+        }
         return (
           <div className="flex items-center justify-center gap-0.5">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(item);
-              }}
-              className="p-2 text-primary hover:bg-primary/10 rounded-md transition-all"
-            >
-              <Edit size={15} />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(item.id);
-              }}
-              className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-all"
-            >
-              <Trash2 size={15} />
-            </button>
+            {canUpdate ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(item);
+                }}
+                className="p-2 text-primary hover:bg-primary/10 rounded-md transition-all"
+              >
+                <Edit size={15} />
+              </button>
+            ) : null}
+            {canDelete ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(item.id);
+                }}
+                className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-all"
+              >
+                <Trash2 size={15} />
+              </button>
+            ) : null}
           </div>
         );
       default:
@@ -142,28 +159,34 @@ const EmployeeTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
           <Phone size={12} />
           <span>{item.so_dien_thoai}</span>
         </div>
-        <div className="flex gap-1.5">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(item);
-            }}
-            className="p-2 text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
-          >
-            <Edit size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(item.id);
-            }}
-            className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
+        {canUpdate || canDelete ? (
+          <div className="flex gap-1.5">
+            {canUpdate ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(item);
+                }}
+                className="p-2 text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-all active:scale-90"
+              >
+                <Edit size={14} />
+              </button>
+            ) : null}
+            {canDelete ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(item.id);
+                }}
+                className="p-2 text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 rounded-lg transition-all active:scale-90"
+              >
+                <Trash2 size={14} />
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   );

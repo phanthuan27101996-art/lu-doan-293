@@ -16,6 +16,7 @@ import Button from '../../../../components/ui/Button';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import { cn } from '../../../../lib/utils';
 import { useUpdateModulePermissions } from '../hooks/use-phan-quyen';
+import { normalizeMatrixActions } from '@/lib/module-permissions';
 
 interface Props {
   roles: PositionPermission[];
@@ -55,15 +56,17 @@ const TriCheck: React.FC<{
 );
 
 const MATRIX_ACTIONS: ActionType[] = [...PERMISSION_ACTIONS];
-const INDIVIDUAL_ACTIONS: ActionType[] = ['view', 'create', 'update', 'delete', 'admin'];
+const INDIVIDUAL_ACTIONS: ActionType[] = ['view', 'create', 'update', 'delete', 'quan_tri'];
 
 const getModuleSlug = (id: string) => id.split('/').pop() ?? id;
 
-const syncAll = (actions: ActionType[]): ActionType[] => {
-  const allOn = INDIVIDUAL_ACTIONS.every((a) => actions.includes(a));
-  if (allOn && !actions.includes('all')) return [...actions, 'all'];
-  if (!allOn && actions.includes('all')) return actions.filter((a) => a !== 'all');
-  return actions;
+/** Giữ đồng bộ cờ `all` với các cột matrix; `admin` (DB cũ) → `quan_tri` qua normalize. */
+const syncAll = (actions: string[]): string[] => {
+  const norm = normalizeMatrixActions(actions);
+  const allOn = INDIVIDUAL_ACTIONS.every((a) => norm.includes(a));
+  if (allOn && !norm.includes('all')) return [...norm, 'all'];
+  if (!allOn && norm.includes('all')) return norm.filter((a) => a !== 'all');
+  return norm;
 };
 
 const getFirstModuleId = (): string =>
@@ -195,14 +198,14 @@ const MobileModuleDetail: React.FC<{
   t: (key: string) => string;
 }> = ({ moduleId, roles, onBack, t }) => {
   const updateMutation = useUpdateModulePermissions();
-  const [localPerms, setLocalPerms] = useState<Record<string, ActionType[]>>({});
+  const [localPerms, setLocalPerms] = useState<Record<string, string[]>>({});
   const [deptFilter, setDeptFilter] = useState<string | null>(null);
 
   const moduleConfig = useMemo(() => SYSTEM_MODULES_CONFIG.find((m) => m.id === moduleId), [moduleId]);
   const moduleName = moduleConfig ? t(moduleConfig.nameKey) : moduleId;
 
   useEffect(() => {
-    const p: Record<string, ActionType[]> = {};
+    const p: Record<string, string[]> = {};
     roles.forEach((role) => {
       const mp = role.quyen_han.find((q) => q.module_id === moduleId);
       p[role.id] = mp ? syncAll([...mp.actions]) : [];
@@ -213,7 +216,7 @@ const MobileModuleDetail: React.FC<{
   const actionLabels: Record<string, string> = {
     view: t('permission.form.view'), create: t('permission.form.add'),
     update: t('permission.form.edit'), delete: t('permission.form.delete'),
-    admin: t('permission.matrix.admin'), all: t('permission.form.all'),
+    quan_tri: t('permission.matrix.admin'), all: t('permission.form.all'),
   };
 
   const departmentOptions = useMemo(() => {
@@ -479,7 +482,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading }) => {
   const [selectedModuleId, setSelectedModuleId] = useState<string>(getFirstModuleId);
   const [mobileSelectedModule, setMobileSelectedModule] = useState<string | null>(null);
   const [selectedDeptFilter, setSelectedDeptFilter] = useState<string | null>(null);
-  const [localPermissions, setLocalPermissions] = useState<Record<string, ActionType[]>>({});
+  const [localPermissions, setLocalPermissions] = useState<Record<string, string[]>>({});
   const updateMutation = useUpdateModulePermissions();
 
   const toggleGroupExpand = (key: string) => {
@@ -490,7 +493,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading }) => {
   const displayModuleName = selectedModule ? t(selectedModule.nameKey) : selectedModuleId;
 
   useEffect(() => {
-    const p: Record<string, ActionType[]> = {};
+    const p: Record<string, string[]> = {};
     roles.forEach((role) => {
       const mp = role.quyen_han.find((q) => q.module_id === selectedModuleId);
       p[role.id] = mp ? syncAll([...mp.actions]) : [];
@@ -501,7 +504,7 @@ const PermissionMatrix: React.FC<Props> = ({ roles, isLoading }) => {
   const actionLabels: Record<string, string> = {
     view: t('permission.form.view'), create: t('permission.form.add'),
     update: t('permission.form.edit'), delete: t('permission.form.delete'),
-    admin: t('permission.matrix.admin'), all: t('permission.form.all'),
+    quan_tri: t('permission.matrix.admin'), all: t('permission.form.all'),
   };
 
   const filteredFunctions = useMemo(() => selectedFunction ? PERMISSION_FUNCTIONS.filter((f) => f.id === selectedFunction.id) : PERMISSION_FUNCTIONS, [selectedFunction]);

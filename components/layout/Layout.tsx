@@ -14,14 +14,17 @@ import { useAuthStore, useUIStore } from '../../store/useStore';
 import { APP_DISPLAY_NAME, APP_LOGO_PATH, APP_TAGLINE } from '../../lib/branding';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../ui/Button';
-import { VnPhoneDigitInput } from '../ui/VnPhoneDigitInput';
 import { cn, getAvatarUrl } from '../../lib/utils';
-import { findEmployeeByAuthIdentity, isValidVnPhone, normalizeVnPhone, phoneFromAuthEmail } from '../../lib/phone-auth';
+import { findEmployeeByAuthIdentity } from '../../lib/phone-auth';
 import { getAuthService } from '../../lib/supabase/auth';
 import MobileBottomNav from './MobileBottomNav';
 import AppBreadcrumb from '../shared/AppBreadcrumb';
-import { SIDEBAR_MENU } from '../../lib/sidebar-menu';
+import { useQuery } from '@tanstack/react-query';
+import { filterSidebarMenuByModuleView, getSidebarMenuForUser } from '../../lib/phan-quyen-access';
 import { useEmployees } from '../../features/he-thong/nhan-vien/hooks/use-nhan-vien';
+import { getRoles } from '../../features/he-thong/phan-quyen/services/phan-quyen-service';
+import { PHAN_QUYEN_ROLES_QUERY_KEY } from '../../lib/module-permissions';
+import { isSupabase } from '../../lib/data/config';
 import { toast } from 'sonner';
 
 /** Sidebar width: expanded 240px (gọn), collapsed 64px (4rem, 8px grid) */
@@ -49,28 +52,22 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const { sidebarOpen, toggleSidebar } = useUIStore();
   const location = useLocation();
   const navigate = useNavigate();
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [], isPending: employeesPending } = useEmployees();
   const currentEmployee = findEmployeeByAuthIdentity(user, employees) ?? null;
+  const { data: phanQuyenRoles, isPending: phanQuyenRolesPending } = useQuery({
+    queryKey: PHAN_QUYEN_ROLES_QUERY_KEY,
+    queryFn: getRoles,
+    enabled: isSupabase(),
+    staleTime: 1000 * 60 * 5,
+  });
   const displayNameForAvatar = currentEmployee?.ho_ten ?? user?.full_name ?? 'User';
+  const headerUserSubtitle =
+    currentEmployee?.ten_chuc_vu?.trim() || t('employee.unassigned');
 
   useScrollRestoration('main-content');
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [logoutPhoneDigits, setLogoutPhoneDigits] = useState('');
-  const [logoutPhoneError, setLogoutPhoneError] = useState<string | undefined>();
-
-  const accountPhone = useMemo(() => {
-    if (!user) return undefined;
-    if (user.phone) {
-      const n = normalizeVnPhone(user.phone);
-      if (isValidVnPhone(n)) return n;
-    }
-    const fromEmail = phoneFromAuthEmail(user.email);
-    return fromEmail;
-  }, [user]);
 
   const openLogoutDialog = () => {
-    setLogoutPhoneDigits('');
-    setLogoutPhoneError(undefined);
     setShowLogoutDialog(true);
   };
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
@@ -120,20 +117,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     setLogoError(false);
   }, []);
 
-  const logoutPhoneMatches =
-    accountPhone != null &&
-    isValidVnPhone(logoutPhoneDigits) &&
-    normalizeVnPhone(logoutPhoneDigits) === accountPhone;
-
   const handleLogout = async () => {
-    if (accountPhone != null) {
-      if (!logoutPhoneMatches) {
-        setLogoutPhoneError(t('nav.logoutPhoneMismatch'));
-        toast.error(t('nav.logoutPhoneMismatch'));
-        return;
-      }
-    }
-    setLogoutPhoneError(undefined);
     try {
       await getAuthService().signOut();
     } catch {
@@ -169,7 +153,21 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     toast.success(t('nav.changePassword.success'));
   };
 
-  const navItems = SIDEBAR_MENU.map(({ path, nameKey, icon }) => ({ name: t(nameKey), icon, path }));
+  const navItems = useMemo(() => {
+    const base = getSidebarMenuForUser(currentEmployee);
+    const filtered = filterSidebarMenuByModuleView(
+      base,
+      currentEmployee,
+      phanQuyenRoles,
+      phanQuyenRolesPending,
+      employeesPending,
+    );
+    return filtered.map(({ path, nameKey, icon }) => ({
+      name: t(nameKey),
+      icon,
+      path,
+    }));
+  }, [currentEmployee, phanQuyenRoles, phanQuyenRolesPending, employeesPending, t]);
 
   const sidebarTransition = { duration: 0.15, ease: "circOut" };
 
@@ -352,9 +350,9 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                   />
                   <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-[1.5px] border-card rounded-full"></div>
                 </div>
-                <div className="hidden md:block text-left">
-                  <p className="text-xs font-semibold text-foreground leading-tight">{user?.full_name || t('nav.guestUser')}</p>
-                  <p className="text-xs font-normal text-muted-foreground leading-tight">{user?.role === 'admin' ? t('nav.roleAdmin') : t('nav.roleMember')}</p>
+                <div className="hidden md:block text-left min-w-0 max-w-[11rem]">
+                  <p className="text-xs font-semibold text-foreground leading-tight truncate">{user?.full_name || t('nav.guestUser')}</p>
+                  <p className="text-xs font-normal text-muted-foreground leading-tight truncate" title={headerUserSubtitle}>{headerUserSubtitle}</p>
                 </div>
                 <ChevronDown size={12} className={cn("text-muted-foreground/50 hidden md:block transition-transform", isUserMenuOpen ? "rotate-180" : "")} />
               </button>
@@ -369,7 +367,8 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                   >
                     <div className="px-3 py-2.5 border-b border-border md:hidden">
                       <p className="text-xs font-semibold text-foreground">{user?.full_name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{user?.phone ?? user?.email ?? '—'}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate" title={headerUserSubtitle}>{headerUserSubtitle}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{user?.phone ?? user?.email ?? '—'}</p>
                     </div>
                     <div className="space-y-0.5">
                       <Link to="/ho-so" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 text-xs font-medium text-muted-foreground hover:bg-primary/5 hover:text-primary rounded-lg transition-all group">
@@ -432,28 +431,12 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 <LogOut size={24} />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-1">{t('nav.logoutConfirmTitle')}</h3>
-              <p className="text-sm text-muted-foreground mb-3 leading-relaxed">{t('nav.logoutConfirmMessage')}</p>
-              {accountPhone != null ? (
-                <div className="mb-4 text-left">
-                  <p className="text-xs text-muted-foreground mb-2">{t('nav.logoutConfirmPhoneHint')}</p>
-                  <VnPhoneDigitInput
-                    label={t('page.login.phone')}
-                    hint={t('page.login.phoneDigitHint')}
-                    value={logoutPhoneDigits}
-                    onChange={(d) => {
-                      setLogoutPhoneDigits(d);
-                      setLogoutPhoneError(undefined);
-                    }}
-                    error={logoutPhoneError}
-                  />
-                </div>
-              ) : null}
+              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">{t('nav.logoutConfirmMessage')}</p>
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1 rounded-lg h-9 text-sm font-medium" onClick={() => setShowLogoutDialog(false)}>{t('nav.logoutCancel')}</Button>
                 <Button
                   className="flex-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg h-9 text-sm font-medium shadow-sm"
                   onClick={() => void handleLogout()}
-                  disabled={accountPhone != null && !logoutPhoneMatches}
                 >
                   {t('nav.logout')}
                 </Button>

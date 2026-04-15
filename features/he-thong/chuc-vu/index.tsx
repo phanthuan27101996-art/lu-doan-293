@@ -16,11 +16,14 @@ import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../lib/button-labels';
 import { useListWithFilter } from '../../../lib/hooks';
 import { useExportData } from '../../../lib/useExportData';
+import { useModulePermission } from '@/hooks/use-module-permission';
+import ModulePermissionDenied from '@/components/shared/ModulePermissionDenied';
 import { Position } from './core/types';
 import type { PositionFilters } from './store/usePositionStore';
 
 const PositionPage: React.FC = () => {
   const { t } = useTranslation();
+  const perm = useModulePermission('chuc-vu');
   const confirm = useConfirmStore((s) => s.confirm);
 
   const [showForm, setShowForm] = useState(false);
@@ -106,12 +109,14 @@ const PositionPage: React.FC = () => {
   const visibleColumnKeys = useMemo(() => columns.filter((c) => c.visible).map((c) => c.id), [columns]);
 
   const handleEdit = (item: Position) => {
+    if (!perm.canUpdate) return;
     setFormOrigin(viewingPos ? 'detail' : 'list');
     setEditingPos(item);
     setShowForm(true);
   };
 
   const handleDelete = (id: string) => {
+    if (!perm.canDelete) return;
     confirm({
       title: t('position.deleteTitle'),
       message: t('position.deleteMessage'),
@@ -128,6 +133,7 @@ const PositionPage: React.FC = () => {
   };
 
   const handleDeleteMany = (ids: string[]) => {
+    if (!perm.canDelete) return;
     confirm({
       title: t('position.bulkDeleteTitle'),
       message: t('position.bulkDeleteMessage', { count: ids.length }),
@@ -140,6 +146,7 @@ const PositionPage: React.FC = () => {
   };
 
   const handleExport = () => {
+    if (!perm.canView) return;
     if (filteredPositions.length === 0) {
       toast.warning(t('position.noExportData'));
       return;
@@ -159,14 +166,41 @@ const PositionPage: React.FC = () => {
     setFormOrigin('list');
   };
 
+  if (perm.isLoading) {
+    return (
+      <div className="flex flex-col h-page items-center justify-center min-h-[40vh]" aria-busy="true">
+        <div className="h-10 w-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (!perm.canView) {
+    return (
+      <div className="flex flex-col h-page">
+        <ModulePermissionDenied />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-page">
       <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         <PositionToolbar
-          onAdd={() => setShowForm(true)}
+          onAdd={() => {
+            if (!perm.canCreate) return;
+            setEditingPos(null);
+            setShowForm(true);
+          }}
           onExport={handleExport}
-          onImport={() => toast.info(t('position.importDeveloping'))}
+          onImport={() => {
+            if (!perm.canCreate) return;
+            toast.info(t('position.importDeveloping'));
+          }}
           onDeleteMany={handleDeleteMany}
+          canCreate={perm.canCreate}
+          canDelete={perm.canDelete}
+          canImport={perm.canCreate}
+          canExport={perm.canView}
         />
 
         <div className="flex-1 min-h-0">
@@ -176,17 +210,28 @@ const PositionPage: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onView={setViewingPos}
+            canUpdate={perm.canUpdate}
+            canDelete={perm.canDelete}
           />
         </div>
       </div>
 
       <AnimatePresence>
-        {showForm && <PositionForm initialData={editingPos} onClose={handleCloseForm} />}
+        {showForm && ((editingPos != null && perm.canUpdate) || (editingPos == null && perm.canCreate)) ? (
+          <PositionForm initialData={editingPos} onClose={handleCloseForm} />
+        ) : null}
       </AnimatePresence>
 
       <AnimatePresence>
         {viewingPos && !showForm && (
-          <PositionDetail data={viewingPos} onClose={() => setViewingPos(null)} onEdit={handleEdit} onDelete={handleDelete} />
+          <PositionDetail
+            data={viewingPos}
+            onClose={() => setViewingPos(null)}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            canUpdate={perm.canUpdate}
+            canDelete={perm.canDelete}
+          />
         )}
       </AnimatePresence>
 

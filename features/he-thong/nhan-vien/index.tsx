@@ -24,6 +24,8 @@ import { formatDate, getLanguage } from '../../../lib/utils';
 import { useListWithFilter } from '../../../lib/hooks';
 import { matchesSearchTerm } from '../../../lib/searchUtils';
 import { useExportData } from '../../../lib/useExportData';
+import { useModulePermission } from '@/hooks/use-module-permission';
+import ModulePermissionDenied from '@/components/shared/ModulePermissionDenied';
 
 type FormOrigin = 'list' | 'detail';
 
@@ -31,6 +33,7 @@ const NHAN_VIEN_SEARCHABLE_KEYS: string[] = ['id', 'ho_ten', 'ten_chuc_vu', 'so_
 
 const EmployeePage: React.FC = () => {
   const { t } = useTranslation();
+  const perm = useModulePermission('danh-sach-quan-nhan');
 
   const IMPORT_COLUMNS = useMemo(
     () => [
@@ -157,6 +160,7 @@ const EmployeePage: React.FC = () => {
   const visibleColumnKeys = useMemo(() => columns.filter(c => c.visible).map(c => c.id), [columns]);
 
   const handleEdit = (item: Employee) => {
+    if (!perm.canUpdate) return;
     setFormOrigin(viewingEmp ? 'detail' : 'list');
     setEditingEmp(item);
     setShowForm(true);
@@ -167,6 +171,7 @@ const EmployeePage: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
+    if (!perm.canDelete) return;
     const emp = employees.find(e => e.id === id);
     if (!emp) return;
     confirm({
@@ -186,6 +191,7 @@ const EmployeePage: React.FC = () => {
   };
 
   const handleDeleteMany = (ids: string[]) => {
+      if (!perm.canDelete) return;
       const emps = employees.filter(e => ids.includes(e.id));
       confirm({
           title: t('employee.bulkDeleteTitle'),
@@ -199,9 +205,26 @@ const EmployeePage: React.FC = () => {
   };
 
   const handleImportData = async (data: Record<string, any>[]) => {
+    if (!perm.canCreate) return;
     // In real app, call API to bulk create employees
     toast.success(t('employee.importSuccess', { count: data.length }));
   };
+
+  if (perm.isLoading) {
+    return (
+      <div className="flex flex-col h-page relative items-center justify-center min-h-[40vh]" aria-busy="true">
+        <div className="h-10 w-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (!perm.canView) {
+    return (
+      <div className="flex flex-col h-page relative">
+        <ModulePermissionDenied />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-page relative">
@@ -215,13 +238,26 @@ const EmployeePage: React.FC = () => {
           <EmployeeToolbar
             employees={employees}
             onAdd={() => {
+              if (!perm.canCreate) return;
               setFormOrigin('list');
+              setEditingEmp(null);
               setShowForm(true);
             }}
-            onExport={() => setShowExport(true)}
-            onImport={() => setShowImport(true)}
+            onExport={() => {
+              if (!perm.canView) return;
+              setShowExport(true);
+            }}
+            onImport={() => {
+              if (!perm.canCreate) return;
+              setShowImport(true);
+            }}
             onDeleteMany={handleDeleteMany}
-            onBulkEdit={() => setShowBulkEdit(true)}
+            onBulkEdit={perm.canUpdate ? () => setShowBulkEdit(true) : undefined}
+            canCreate={perm.canCreate}
+            canDelete={perm.canDelete}
+            canImport={perm.canCreate}
+            canExport={perm.canView}
+            canUpdate={perm.canUpdate}
           />
 
           <div className="flex-1 min-h-0">
@@ -231,6 +267,8 @@ const EmployeePage: React.FC = () => {
               onEdit={handleEdit}
               onView={handleView}
               onDelete={handleDelete}
+              canUpdate={perm.canUpdate}
+              canDelete={perm.canDelete}
             />
           </div>
         </div>
@@ -248,7 +286,7 @@ const EmployeePage: React.FC = () => {
       )}
 
       <AnimatePresence>
-        {showForm && (
+        {showForm && ((editingEmp != null && perm.canUpdate) || (editingEmp == null && perm.canCreate)) ? (
             <EmployeeForm 
                 initialData={editingEmp} 
                 onClose={() => {
@@ -261,7 +299,7 @@ const EmployeePage: React.FC = () => {
                   setEditingEmp(null);
                 }} 
             />
-        )}
+        ) : null}
       </AnimatePresence>
 
       <AnimatePresence>
@@ -271,6 +309,8 @@ const EmployeePage: React.FC = () => {
                 onClose={() => setViewingEmp(null)}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                canUpdate={perm.canUpdate}
+                canDelete={perm.canDelete}
             />
         )}
       </AnimatePresence>
@@ -303,7 +343,7 @@ const EmployeePage: React.FC = () => {
       </AnimatePresence>
 
       <AnimatePresence>
-        {showBulkEdit && selectedIds.size > 0 && (
+        {perm.canUpdate && showBulkEdit && selectedIds.size > 0 && (
           <BulkEditSheet
             selectedEmployees={employees.filter(e => selectedIds.has(e.id))}
             onClose={() => setShowBulkEdit(false)}

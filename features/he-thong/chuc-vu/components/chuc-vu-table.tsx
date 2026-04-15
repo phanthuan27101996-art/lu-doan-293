@@ -12,9 +12,19 @@ interface Props {
   onEdit: (item: Position) => void;
   onDelete: (id: string) => void;
   onView?: (item: Position) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
-const PositionTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onView }) => {
+const PositionTable: React.FC<Props> = ({
+  data,
+  isLoading,
+  onEdit,
+  onDelete,
+  onView,
+  canUpdate = true,
+  canDelete = true,
+}) => {
   const { t } = useTranslation();
   const {
     columns,
@@ -44,30 +54,37 @@ const PositionTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
       case 'tg_cap_nhat':
         return <span className="text-xs text-muted-foreground">{formatDateShort(item.tg_cap_nhat)}</span>;
       case 'actions':
+        if (!canUpdate && !canDelete) {
+          return <span className="text-xs text-muted-foreground">—</span>;
+        }
         return (
           <div className="flex items-center justify-center gap-1">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(item);
-              }}
-              className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
-              aria-label={t('common.edit')}
-            >
-              <Edit size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(item.id);
-              }}
-              className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
-              aria-label={t('common.delete')}
-            >
-              <Trash2 size={16} />
-            </button>
+            {canUpdate ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(item);
+                }}
+                className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-all"
+                aria-label={t('common.edit')}
+              >
+                <Edit size={16} />
+              </button>
+            ) : null}
+            {canDelete ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(item.id);
+                }}
+                className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
+                aria-label={t('common.delete')}
+              >
+                <Trash2 size={16} />
+              </button>
+            ) : null}
           </div>
         );
       default:
@@ -104,28 +121,34 @@ const PositionTable: React.FC<Props> = ({ data, isLoading, onEdit, onDelete, onV
             </div>
           </div>
           <p className="text-xs text-muted-foreground font-mono mb-3">id: {item.id}</p>
-          <div className="flex justify-end gap-2 pt-3 border-t border-border">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(item);
-              }}
-              className="p-2 text-primary bg-primary/10 rounded-xl"
-            >
-              <Edit size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(item.id);
-              }}
-              className="p-2 text-red-500 bg-red-50 dark:bg-red-950/30 rounded-xl"
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
+          {canUpdate || canDelete ? (
+            <div className="flex justify-end gap-2 pt-3 border-t border-border">
+              {canUpdate ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(item);
+                  }}
+                  className="p-2 text-primary bg-primary/10 rounded-xl"
+                >
+                  <Edit size={16} />
+                </button>
+              ) : null}
+              {canDelete ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(item.id);
+                  }}
+                  className="p-2 text-red-500 bg-red-50 dark:bg-red-950/30 rounded-xl"
+                >
+                  <Trash2 size={16} />
+                </button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Download, Upload, Briefcase, Pencil } from 'lucide-react';
+import { Plus, Download, Upload, Briefcase, Pencil, type LucideIcon } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import { useEmployeeStore } from '../store/useEmployeeStore';
@@ -18,6 +18,11 @@ interface Props {
   onImport: () => void;
   onDeleteMany: (ids: string[]) => void;
   onBulkEdit?: () => void;
+  canCreate?: boolean;
+  canDelete?: boolean;
+  canImport?: boolean;
+  canExport?: boolean;
+  canUpdate?: boolean;
 }
 
 const EmployeeToolbar: React.FC<Props> = ({
@@ -27,6 +32,11 @@ const EmployeeToolbar: React.FC<Props> = ({
   onImport,
   onDeleteMany,
   onBulkEdit,
+  canCreate = true,
+  canDelete = true,
+  canImport = true,
+  canExport = true,
+  canUpdate = true,
 }) => {
   const { t } = useTranslation();
   const {
@@ -85,40 +95,41 @@ const EmployeeToolbar: React.FC<Props> = ({
     [positionOptions, filters.position, setFilter, t],
   );
 
-  const mobileActions = useMemo(
-    () => [
-      ...(onBulkEdit && selectedIds.size > 0
-        ? [
-            {
-              key: 'bulk-edit',
-              label: t('employee.toolbar.bulkEdit'),
-              icon: Pencil,
-              onClick: onBulkEdit,
-              description: t('employee.toolbar.bulkEditDesc', { count: selectedIds.size }),
-            },
-          ]
-        : []),
-      {
+  const mobileActions = useMemo(() => {
+    const list: { key: string; label: string; icon: LucideIcon; onClick: () => void; description: string }[] = [];
+    if (canUpdate && onBulkEdit && selectedIds.size > 0) {
+      list.push({
+        key: 'bulk-edit',
+        label: t('employee.toolbar.bulkEdit'),
+        icon: Pencil,
+        onClick: onBulkEdit,
+        description: t('employee.toolbar.bulkEditDesc', { count: selectedIds.size }),
+      });
+    }
+    if (canImport) {
+      list.push({
         key: 'import',
         label: t('employee.toolbar.importData'),
         icon: Upload,
         onClick: onImport,
         description: t('employee.toolbar.importDesc'),
-      },
-      {
+      });
+    }
+    if (canExport) {
+      list.push({
         key: 'export',
         label: t('employee.toolbar.exportData'),
         icon: Download,
         onClick: onExport,
         description: t('employee.toolbar.exportDesc'),
-      },
-    ],
-    [onImport, onExport, onBulkEdit, selectedIds.size, t],
-  );
+      });
+    }
+    return list;
+  }, [canExport, canImport, canUpdate, onBulkEdit, onExport, onImport, selectedIds.size, t]);
 
   const renderActions = (
     <>
-      {onBulkEdit && selectedIds.size > 0 && (
+      {canUpdate && onBulkEdit && selectedIds.size > 0 ? (
         <Tooltip content={t('employee.toolbar.bulkEdit')} placement="bottom">
           <Button
             variant="outline"
@@ -130,31 +141,37 @@ const EmployeeToolbar: React.FC<Props> = ({
             <span className="text-xs font-medium">{t('employee.toolbar.editCount', { count: selectedIds.size })}</span>
           </Button>
         </Tooltip>
-      )}
-      <Tooltip content={t('employee.toolbar.importData')} placement="bottom">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onImport}
-          className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted"
-        >
-          <Upload className="w-4 h-4" />
+      ) : null}
+      {canImport ? (
+        <Tooltip content={t('employee.toolbar.importData')} placement="bottom">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onImport}
+            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted"
+          >
+            <Upload className="w-4 h-4" />
+          </Button>
+        </Tooltip>
+      ) : null}
+      {canExport ? (
+        <Tooltip content={t('employee.toolbar.exportData')} placement="bottom">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onExport}
+            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted"
+          >
+            <Download className="w-4 h-4" />
+          </Button>
+        </Tooltip>
+      ) : null}
+      {canCreate ? (
+        <Button onClick={onAdd} size="sm" className="bg-primary text-white hover:bg-primary/90 shadow-sm h-8 px-3">
+          <Plus className="w-4 h-4 mr-1.5" />
+          <span className="text-xs">{BTN_ADD()}</span>
         </Button>
-      </Tooltip>
-      <Tooltip content={t('employee.toolbar.exportData')} placement="bottom">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onExport}
-          className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted"
-        >
-          <Download className="w-4 h-4" />
-        </Button>
-      </Tooltip>
-      <Button onClick={onAdd} size="sm" className="bg-primary text-white hover:bg-primary/90 shadow-sm h-8 px-3">
-        <Plus className="w-4 h-4 mr-1.5" />
-        <span className="text-xs">{BTN_ADD()}</span>
-      </Button>
+      ) : null}
     </>
   );
 
@@ -168,8 +185,8 @@ const EmployeeToolbar: React.FC<Props> = ({
       filters={renderFilters}
       filterGroups={filterGroups}
       mobileActions={mobileActions}
-      onAdd={onAdd}
-      onDeleteMany={() => onDeleteMany(Array.from(selectedIds))}
+      onAdd={canCreate ? onAdd : undefined}
+      onDeleteMany={canDelete ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}

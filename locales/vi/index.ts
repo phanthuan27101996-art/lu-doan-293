@@ -33,6 +33,13 @@ import kho from './kho.json';
 import truyenThong from './truyen-thong.json';
 import trangTin from './trang-tin.json';
 import congVan from './cong-van.json';
+import moiTuanMotDieuLuat from './moi-tuan-mot-dieu-luat.json';
+import moiNgayMotLoiDayBacHo from './moi-ngay-mot-loi-day-bac-ho.json';
+import thiTracNghiem from './thi-trac-nghiem.json';
+import doanCoSo from './doan-co-so.json';
+import khoNhac from './kho-nhac.json';
+import khoVideo from './kho-video.json';
+import gopY from './gop-y.json';
 
 const vi = {
   ...(common as Record<string, string>),
@@ -66,6 +73,13 @@ const vi = {
   ...(truyenThong as Record<string, string>),
   ...(trangTin as Record<string, string>),
   ...(congVan as Record<string, string>),
+  ...(moiTuanMotDieuLuat as Record<string, string>),
+  ...(moiNgayMotLoiDayBacHo as Record<string, string>),
+  ...(thiTracNghiem as Record<string, string>),
+  ...(doanCoSo as Record<string, string>),
+  ...(khoNhac as Record<string, string>),
+  ...(khoVideo as Record<string, string>),
+  ...(gopY as Record<string, string>),
 };
 
 export default vi;

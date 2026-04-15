@@ -44,6 +44,7 @@ function flattenSupabaseQuanNhanRow(row: Record<string, unknown>): Employee {
     chuc_vu_id: chucVuId,
     ten_chuc_vu: undefined,
     anh_dai_dien: (row.avatar as string | null) || undefined,
+    is_admin: row.is_admin === true,
     tg_tao: (row.tg_tao as string | null) ?? null,
     tg_cap_nhat: (row.tg_cap_nhat as string | null) ?? null,
   };

@@ -19,6 +19,8 @@ import { formatDate, getLanguage } from '../../lib/utils';
 import { useListWithFilter } from '../../lib/hooks';
 import { matchesSearchTerm } from '../../lib/searchUtils';
 import { useExportData } from '../../lib/useExportData';
+import { useModulePermission } from '@/hooks/use-module-permission';
+import ModulePermissionDenied from '@/components/shared/ModulePermissionDenied';
 
 type FormOrigin = 'list' | 'detail';
 
@@ -37,6 +39,7 @@ const TAI_LIEU_SEARCHABLE_KEYS: string[] = [
 
 const TaiLieuPage: React.FC = () => {
   const { t } = useTranslation();
+  const perm = useModulePermission('tai-lieu');
 
   const IMPORT_COLUMNS = useMemo(
     () => [
@@ -137,6 +140,7 @@ const TaiLieuPage: React.FC = () => {
   const visibleColumnKeys = useMemo(() => columns.filter((c) => c.visible).map((c) => c.id), [columns]);
 
   const handleEdit = (item: TaiLieu) => {
+    if (!perm.canUpdate) return;
     setFormOrigin(viewing ? 'detail' : 'list');
     setEditing(item);
     setShowForm(true);
@@ -147,6 +151,7 @@ const TaiLieuPage: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
+    if (!perm.canDelete) return;
     const row = items.find((e) => e.id === id);
     if (!row) return;
     confirm({
@@ -163,6 +168,7 @@ const TaiLieuPage: React.FC = () => {
   };
 
   const handleDeleteMany = (ids: string[]) => {
+    if (!perm.canDelete) return;
     confirm({
       title: t('taiLieu.dm.bulkDeleteTitle'),
       message: t('taiLieu.dm.bulkDeleteMessage', { count: ids.length }),
@@ -177,8 +183,25 @@ const TaiLieuPage: React.FC = () => {
   };
 
   const handleImportData = async (data: Record<string, unknown>[]) => {
+    if (!perm.canCreate) return;
     toast.success(t('taiLieu.dm.importSuccess', { count: data.length }));
   };
+
+  if (perm.isLoading) {
+    return (
+      <div className="flex flex-col h-page relative items-center justify-center min-h-[40vh]" aria-busy="true">
+        <div className="h-10 w-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (!perm.canView) {
+    return (
+      <div className="flex flex-col h-page relative">
+        <ModulePermissionDenied />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-page relative">
@@ -186,13 +209,24 @@ const TaiLieuPage: React.FC = () => {
         <TaiLieuToolbar
           items={items}
           onAdd={() => {
+            if (!perm.canCreate) return;
             setFormOrigin('list');
             setEditing(null);
             setShowForm(true);
           }}
-          onExport={() => setShowExport(true)}
-          onImport={() => setShowImport(true)}
+          onExport={() => {
+            if (!perm.canView) return;
+            setShowExport(true);
+          }}
+          onImport={() => {
+            if (!perm.canCreate) return;
+            setShowImport(true);
+          }}
           onDeleteMany={handleDeleteMany}
+          canCreate={perm.canCreate}
+          canDelete={perm.canDelete}
+          canImport={perm.canCreate}
+          canExport={perm.canView}
         />
 
         <div className="flex-1 min-h-0">
@@ -202,12 +236,14 @@ const TaiLieuPage: React.FC = () => {
             onEdit={handleEdit}
             onView={handleView}
             onDelete={handleDelete}
+            canUpdate={perm.canUpdate}
+            canDelete={perm.canDelete}
           />
         </div>
       </div>
 
       <AnimatePresence>
-        {showForm && (
+        {showForm && ((editing != null && perm.canUpdate) || (editing == null && perm.canCreate)) ? (
           <TaiLieuForm
             initialData={editing}
             existingItems={items}
@@ -220,7 +256,7 @@ const TaiLieuPage: React.FC = () => {
               setEditing(null);
             }}
           />
-        )}
+        ) : null}
       </AnimatePresence>
 
       <AnimatePresence>
@@ -230,6 +266,8 @@ const TaiLieuPage: React.FC = () => {
             onClose={() => setViewing(null)}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            canUpdate={perm.canUpdate}
+            canDelete={perm.canDelete}
           />
         )}
       </AnimatePresence>

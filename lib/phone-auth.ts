@@ -56,16 +56,25 @@ export function isValidVnPhone(raw: string): boolean {
   return VN_PHONE_REGEX.test(normalizeVnPhone(raw));
 }
 
+/** Số máy dùng để khớp với `danh_sach_quan_nhan.so_dien_thoai` (ưu tiên `user.phone`, fallback email dạng số@domain). */
+export function resolveAuthPhoneForMatch(user: { phone?: string; email?: string } | null | undefined): string | undefined {
+  if (!user) return undefined;
+  if (user.phone) {
+    const n = normalizeVnPhone(user.phone);
+    if (isValidVnPhone(n)) return n;
+  }
+  const fromEmail = phoneFromAuthEmail(user.email);
+  if (fromEmail && isValidVnPhone(fromEmail)) return fromEmail;
+  return undefined;
+}
+
 /** Ghép quân nhân đang đăng nhập: khớp SĐT (chuẩn hóa VN). */
 export function findEmployeeByAuthIdentity<T extends { so_dien_thoai: string }>(
   user: { phone?: string; email?: string } | null | undefined,
   employees: T[],
 ): T | undefined {
-  if (!user) return undefined;
-  if (user.phone) {
-    const n = normalizeVnPhone(user.phone);
-    const byPhone = employees.find((e) => normalizeVnPhone(e.so_dien_thoai) === n);
-    if (byPhone) return byPhone;
-  }
-  return undefined;
+  if (!user || employees.length === 0) return undefined;
+  const n = resolveAuthPhoneForMatch(user);
+  if (!n) return undefined;
+  return employees.find((e) => normalizeVnPhone(e.so_dien_thoai) === n);
 }

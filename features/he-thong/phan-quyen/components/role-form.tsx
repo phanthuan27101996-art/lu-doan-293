@@ -9,6 +9,7 @@ import Input from '../../../../components/ui/Input';
 import { roleSchema, RoleFormValues } from '../core/schema';
 import { PositionPermission, ModulePermission, ActionType } from '../core/types';
 import { SYSTEM_MODULES_CONFIG, getModuleName } from '../services/phan-quyen-service';
+import { normalizeMatrixActions } from '@/lib/module-permissions';
 import { useCreateRole } from '../hooks/use-phan-quyen';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 
@@ -22,11 +23,13 @@ const RoleForm: React.FC<Props> = ({ initialData, onClose }) => {
   const isEdit = !!initialData;
 
   // Tập hợp tất cả các cột hành động có thể xuất hiện trong hệ thống
-  const ALL_ACTION_COLUMNS: {id: ActionType, label: string, isSpecial?: boolean}[] = [
+  const ALL_ACTION_COLUMNS: { id: ActionType; label: string; isSpecial?: boolean }[] = [
     { id: 'view', label: t('permission.form.view') },
     { id: 'create', label: t('permission.form.add') },
     { id: 'update', label: t('permission.form.edit') },
     { id: 'delete', label: t('permission.form.delete') },
+    { id: 'quan_tri', label: t('permission.matrix.admin') },
+    { id: 'all', label: t('permission.form.all') },
     { id: 'approve', label: t('permission.form.approve'), isSpecial: true },
     { id: 'export', label: t('permission.form.export') },
     { id: 'import', label: t('permission.form.import') },
@@ -50,7 +53,12 @@ const RoleForm: React.FC<Props> = ({ initialData, onClose }) => {
         mo_ta: initialData.mo_ta || '',
         trang_thai: initialData.trang_thai,
       });
-      setPermissions(initialData.quyen_han);
+      setPermissions(
+        initialData.quyen_han.map((p) => ({
+          ...p,
+          actions: normalizeMatrixActions(p.actions),
+        })),
+      );
     }
   }, [initialData, reset]);
 

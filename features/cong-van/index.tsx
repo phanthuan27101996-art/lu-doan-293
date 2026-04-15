@@ -25,6 +25,8 @@ import { formatDate, getLanguage } from '../../lib/utils';
 import { useListWithFilter } from '../../lib/hooks';
 import { matchesSearchTerm } from '../../lib/searchUtils';
 import { useExportData } from '../../lib/useExportData';
+import { useModulePermission } from '@/hooks/use-module-permission';
+import ModulePermissionDenied from '@/components/shared/ModulePermissionDenied';
 
 type FormOrigin = 'list' | 'detail';
 
@@ -45,6 +47,7 @@ const CONG_VAN_SEARCHABLE_KEYS: string[] = [
 
 const CongVanPage: React.FC = () => {
   const { t } = useTranslation();
+  const perm = useModulePermission('cong-van');
   const queryClient = useQueryClient();
   const { data: employees = [] } = useEmployees();
   const authUser = useAuthStore((s) => s.user);
@@ -154,6 +157,7 @@ const CongVanPage: React.FC = () => {
   const visibleColumnKeys = useMemo(() => columns.filter((c) => c.visible).map((c) => c.id), [columns]);
 
   const handleEdit = (item: CongVan) => {
+    if (!perm.canUpdate) return;
     setFormOrigin(viewing ? 'detail' : 'list');
     setEditing(item);
     setShowForm(true);
@@ -164,6 +168,7 @@ const CongVanPage: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
+    if (!perm.canDelete) return;
     const row = items.find((e) => e.id === id);
     if (!row) return;
     confirm({
@@ -180,6 +185,7 @@ const CongVanPage: React.FC = () => {
   };
 
   const handleDeleteMany = (ids: string[]) => {
+    if (!perm.canDelete) return;
     confirm({
       title: t('congVan.dm.bulkDeleteTitle'),
       message: t('congVan.dm.bulkDeleteMessage', { count: ids.length }),
@@ -194,6 +200,7 @@ const CongVanPage: React.FC = () => {
   };
 
   const handleImportData = async (data: Record<string, unknown>[]) => {
+    if (!perm.canCreate) return;
     if (data.length === 0) {
       toast.message(t('congVan.dm.importEmpty'));
       return;
@@ -224,19 +231,46 @@ const CongVanPage: React.FC = () => {
     }
   };
 
+  if (perm.isLoading) {
+    return (
+      <div className="flex flex-col h-page relative items-center justify-center min-h-[40vh]" aria-busy="true">
+        <div className="h-10 w-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (!perm.canView) {
+    return (
+      <div className="flex flex-col h-page relative">
+        <ModulePermissionDenied />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-page relative">
       <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden relative z-0">
         <CongVanToolbar
           items={items}
           onAdd={() => {
+            if (!perm.canCreate) return;
             setFormOrigin('list');
             setEditing(null);
             setShowForm(true);
           }}
-          onExport={() => setShowExport(true)}
-          onImport={() => setShowImport(true)}
+          onExport={() => {
+            if (!perm.canView) return;
+            setShowExport(true);
+          }}
+          onImport={() => {
+            if (!perm.canCreate) return;
+            setShowImport(true);
+          }}
           onDeleteMany={handleDeleteMany}
+          canCreate={perm.canCreate}
+          canDelete={perm.canDelete}
+          canImport={perm.canCreate}
+          canExport={perm.canView}
         />
 
         <div className="flex-1 min-h-0">
@@ -246,12 +280,14 @@ const CongVanPage: React.FC = () => {
             onEdit={handleEdit}
             onView={handleView}
             onDelete={handleDelete}
+            canUpdate={perm.canUpdate}
+            canDelete={perm.canDelete}
           />
         </div>
       </div>
 
       <AnimatePresence>
-        {showForm && (
+        {showForm && ((editing != null && perm.canUpdate) || (editing == null && perm.canCreate)) ? (
           <CongVanForm
             initialData={editing}
             existingItems={items}
@@ -264,7 +300,7 @@ const CongVanPage: React.FC = () => {
               setEditing(null);
             }}
           />
-        )}
+        ) : null}
       </AnimatePresence>
 
       <AnimatePresence>
@@ -274,6 +310,8 @@ const CongVanPage: React.FC = () => {
             onClose={() => setViewing(null)}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            canUpdate={perm.canUpdate}
+            canDelete={perm.canDelete}
           />
         )}
       </AnimatePresence>

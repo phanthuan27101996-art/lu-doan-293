@@ -13,6 +13,7 @@ import Home from './pages/Home';
 import AppModulePlaceholder from './pages/AppModulePlaceholder';
 
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { PhanQuyenAdminRoute } from './components/auth/PhanQuyenAdminRoute';
 import { SupabaseAuthBinding } from './components/auth/SupabaseAuthBinding';
 import {
   ThemeSynchronizer,
@@ -30,6 +31,13 @@ const TruyenThongPage = lazy(() => import('./features/truyen-thong/TruyenThongPa
 const TrangTinPage = lazy(() => import('./features/trang-tin/index'));
 const TaiLieuPage = lazy(() => import('./features/tai-lieu/index'));
 const CongVanPage = lazy(() => import('./features/cong-van/index'));
+const MoiTuanMotDieuLuatPage = lazy(() => import('./features/moi-tuan-mot-dieu-luat/index'));
+const MoiNgayMotLoiDayBacHoPage = lazy(() => import('./features/moi-ngay-mot-loi-day-bac-ho/index'));
+const ThiTracNghiemPage = lazy(() => import('./features/thi-trac-nghiem/index'));
+const DoanCoSoPage = lazy(() => import('./features/doan-co-so/index'));
+const KhoNhacPage = lazy(() => import('./features/kho-nhac/index'));
+const KhoVideoPage = lazy(() => import('./features/kho-video/index'));
+const GopYPage = lazy(() => import('./features/gop-y/index'));
 
 /** Chỉ spinner primary, không chữ – tránh "đang tải 2 lần" với strip trong trang */
 const PageFallback = () => (
@@ -71,17 +79,44 @@ const App = () => {
                     <Route path="/trang-tin" element={<WithPageSuspense><TrangTinPage /></WithPageSuspense>} />
                     <Route path="/tai-lieu" element={<WithPageSuspense><TaiLieuPage /></WithPageSuspense>} />
                     <Route path="/cong-van" element={<WithPageSuspense><CongVanPage /></WithPageSuspense>} />
-                    <Route path="/moi-tuan-mot-dieu-luat" element={<AppModulePlaceholder titleKey="nav.module.moiTuanMotDieuLuat" />} />
-                    <Route path="/moi-ngay-mot-loi-day-bac-ho" element={<AppModulePlaceholder titleKey="nav.module.moiNgayMotLoiDayBacHo" />} />
-                    <Route path="/thi-trac-nghiem" element={<AppModulePlaceholder titleKey="nav.module.thiTracNghiem" />} />
-                    <Route path="/doan-co-so" element={<AppModulePlaceholder titleKey="nav.module.doanCoSo" />} />
-                    <Route path="/kho-video" element={<AppModulePlaceholder titleKey="nav.module.khoVideo" />} />
-                    <Route path="/kho-nhac" element={<AppModulePlaceholder titleKey="nav.module.khoNhac" />} />
-                    <Route path="/gop-y" element={<AppModulePlaceholder titleKey="nav.module.gopY" />} />
+                    <Route path="/moi-tuan-mot-dieu-luat" element={<WithPageSuspense><MoiTuanMotDieuLuatPage /></WithPageSuspense>} />
+                    <Route path="/moi-ngay-mot-loi-day-bac-ho" element={<WithPageSuspense><MoiNgayMotLoiDayBacHoPage /></WithPageSuspense>} />
+                    <Route path="/thi-trac-nghiem" element={<WithPageSuspense><ThiTracNghiemPage /></WithPageSuspense>} />
+                    <Route path="/doan-co-so" element={<WithPageSuspense><DoanCoSoPage /></WithPageSuspense>} />
+                    <Route path="/kho-video" element={<WithPageSuspense><KhoVideoPage /></WithPageSuspense>} />
+                    <Route path="/kho-nhac" element={<WithPageSuspense><KhoNhacPage /></WithPageSuspense>} />
+                    <Route path="/gop-y" element={<WithPageSuspense><GopYPage /></WithPageSuspense>} />
 
-                    <Route path="/danh-sach-quan-nhan" element={<WithPageSuspense><EmployeePage /></WithPageSuspense>} />
-                    <Route path="/chuc-vu" element={<WithPageSuspense><PositionPage /></WithPageSuspense>} />
-                    <Route path="/phan-quyen" element={<WithPageSuspense><SecurityPage /></WithPageSuspense>} />
+                    <Route
+                      path="/danh-sach-quan-nhan"
+                      element={
+                        <WithPageSuspense>
+                          <PhanQuyenAdminRoute>
+                            <EmployeePage />
+                          </PhanQuyenAdminRoute>
+                        </WithPageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/chuc-vu"
+                      element={
+                        <WithPageSuspense>
+                          <PhanQuyenAdminRoute>
+                            <PositionPage />
+                          </PhanQuyenAdminRoute>
+                        </WithPageSuspense>
+                      }
+                    />
+                    <Route
+                      path="/phan-quyen"
+                      element={
+                        <WithPageSuspense>
+                          <PhanQuyenAdminRoute>
+                            <SecurityPage />
+                          </PhanQuyenAdminRoute>
+                        </WithPageSuspense>
+                      }
+                    />
 
                     {/* Chuyển hướng từ URL cũ */}
                     <Route path="/he-thong" element={<Navigate to="/" replace />} />

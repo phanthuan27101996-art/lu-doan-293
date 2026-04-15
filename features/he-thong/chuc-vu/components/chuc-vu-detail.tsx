@@ -15,9 +15,18 @@ interface Props {
   onClose: () => void;
   onEdit: (item: Position) => void;
   onDelete: (id: string) => void;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
-const PositionDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) => {
+const PositionDetail: React.FC<Props> = ({
+  data,
+  onClose,
+  onEdit,
+  onDelete,
+  canUpdate = true,
+  canDelete = true,
+}) => {
   const { t } = useTranslation();
 
   const renderFooter = (
@@ -25,27 +34,35 @@ const PositionDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete }) =>
       <Button variant="ghost" onClick={onClose} className="text-muted-foreground hover:text-foreground border border-border">
         {BTN_CLOSE()}
       </Button>
-      <div className="flex items-center gap-3">
-        <Button
-          onClick={() => {
-            onEdit(data);
-            onClose();
-          }}
-          className="bg-primary text-white shadow-lg hover:bg-primary/90"
-        >
-          <Edit size={16} className="mr-2" /> {BTN_EDIT()}
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => {
-            onDelete(data.id);
-            onClose();
-          }}
-          className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:text-rose-400 border border-rose-200 hover:border-rose-300 dark:border-rose-800 dark:hover:border-rose-700"
-        >
-          <Trash2 size={16} className="mr-2" /> {BTN_DELETE()}
-        </Button>
-      </div>
+      {canUpdate || canDelete ? (
+        <div className="flex items-center gap-3">
+          {canUpdate ? (
+            <Button
+              onClick={() => {
+                onEdit(data);
+                onClose();
+              }}
+              className="bg-primary text-white shadow-lg hover:bg-primary/90"
+            >
+              <Edit size={16} className="mr-2" /> {BTN_EDIT()}
+            </Button>
+          ) : null}
+          {canDelete ? (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                onDelete(data.id);
+                onClose();
+              }}
+              className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50 dark:text-rose-400 border border-rose-200 hover:border-rose-300 dark:border-rose-800 dark:hover:border-rose-700"
+            >
+              <Trash2 size={16} className="mr-2" /> {BTN_DELETE()}
+            </Button>
+          ) : null}
+        </div>
+      ) : (
+        <div />
+      )}
     </div>
   );
 

@@ -29,8 +29,6 @@
   "nav.logout": "Đăng xuất",
   "nav.logoutConfirmTitle": "Xác nhận đăng xuất",
   "nav.logoutConfirmMessage": "Bạn có chắc chắn muốn kết thúc phiên làm việc?",
-  "nav.logoutConfirmPhoneHint": "Nhập lại số điện thoại đăng nhập để xác nhận.",
-  "nav.logoutPhoneMismatch": "Số điện thoại không khớp với tài khoản hiện tại.",
   "nav.logoutError": "Không thể đăng xuất phiên. Thử lại.",
   "nav.logoutCancel": "Hủy bỏ",
   "nav.defaultAppDescription": "Ứng dụng quản lý",
@@ -173,5 +171,7 @@
   "stats.columnLabel": "Tiêu đề",
   "stats.columnValue": "Giá trị",
   "stats.noData": "Không có dữ liệu",
-  "stats.trendVsLastPeriod": "So với kỳ trước"
+  "stats.trendVsLastPeriod": "So với kỳ trước",
+  "common.noPermissionView": "Bạn không có quyền xem module này. Liên hệ quản trị viên nếu cần truy cập.",
+  "common.noPermissionAction": "Bạn không có quyền thực hiện thao tác này."
 }

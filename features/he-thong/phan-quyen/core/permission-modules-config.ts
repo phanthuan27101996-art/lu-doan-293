@@ -19,8 +19,8 @@ export interface PermissionFunction {
   groups: PermissionModuleGroup[];
 }
 
-/** 6 quyền dùng cho tất cả module: Xem, Thêm, Sửa, Xoá, Quản trị, Tất cả */
-export const PERMISSION_ACTIONS = ['view', 'create', 'update', 'delete', 'admin', 'all'] as const;
+/** 6 quyền ma trận mỗi module: Xem, Thêm, Sửa, Xoá, Quản trị module (`quan_tri`), Tất cả — tách với cờ `is_admin` trên quân nhân. */
+export const PERMISSION_ACTIONS = ['view', 'create', 'update', 'delete', 'quan_tri', 'all'] as const;
 export type PermissionActionType = (typeof PERMISSION_ACTIONS)[number];
 
 /** Một chức năng gốc chứa toàn bộ module phẳng (id trùng segment đường dẫn). */

@@ -2,11 +2,17 @@ import { PositionPermission, AccessLog, ModulePermission, ActionType } from '../
 import { RoleFormValues } from '../core/schema';
 import i18n from '../../../../lib/i18n';
 import { createRepository } from '@/lib/data/create-repository';
+import { isSupabase } from '@/lib/data/config';
+import { getSupabase } from '@/lib/supabase/client';
 import {
   PERMISSION_FUNCTIONS,
   PERMISSION_ACTIONS,
   getAllPermissionModules,
 } from '../core/permission-modules-config';
+import { normalizeMatrixActions } from '@/lib/module-permissions';
+
+/** Tên bảng Supabase cho ma trận phân quyền (dùng khi query trực tiếp / mở rộng). */
+export const PHAN_QUYEN_SUPABASE_TABLE = 'phan_quyen' as const;
 
 /** Danh sách phẳng module: id, nameKey (UI dùng t(nameKey)), allowedActions = 6 quyền. */
 export const SYSTEM_MODULES_CONFIG = getAllPermissionModules().map((m) => ({
@@ -20,11 +26,93 @@ export function getModuleName(moduleId: string): string {
   return m?.nameKey ?? moduleId;
 }
 
-function buildMockRoles(): PositionPermission[] {
-  const fullPerms = SYSTEM_MODULES_CONFIG.map((m) => ({
+/**
+ * Ghi vào cột `action` (text): JSON array các mã quyền, ví dụ ["view","bao_cao_tuy_chinh"].
+ * Chuẩn hóa: trim, bỏ trùng, giữ thứ tự.
+ */
+export function serializePhanQuyenActions(actions: readonly string[]): string {
+  const normalized = normalizeMatrixActions(actions);
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of normalized) {
+    const s = String(raw).trim();
+    if (!s || seen.has(s)) continue;
+    seen.add(s);
+    out.push(s);
+  }
+  return JSON.stringify(out);
+}
+
+/**
+ * Đọc cột `action` từ DB: ưu tiên JSON array; nếu không parse được thì tách theo , ; |
+ * (hỗ trợ nhập tay trên Supabase).
+ */
+export function parsePhanQuyenActionText(raw: string | null | undefined): string[] {
+  if (raw == null) return [];
+  const t = raw.trim();
+  if (!t) return [];
+  if (t.startsWith('[')) {
+    try {
+      const v = JSON.parse(t) as unknown;
+      if (Array.isArray(v)) {
+        return v.map((x) => String(x).trim()).filter(Boolean);
+      }
+    } catch {
+      /* fall through */
+    }
+  }
+  return t
+    .split(/[,;|]\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function buildQuyenHan(actionsByModule: Map<string, string[]>): ModulePermission[] {
+  return SYSTEM_MODULES_CONFIG.map((m) => ({
     module_id: m.id,
     module_name: getModuleName(m.id),
-    actions: [...PERMISSION_ACTIONS] as ActionType[],
+    actions: normalizeMatrixActions([...(actionsByModule.get(m.id) ?? [])]),
+  }));
+}
+
+function mapsFromPhanQuyenRows(
+  rows: { id_chuc_vu: number | string; module_key: string; action: string }[],
+): Map<string, Map<string, string[]>> {
+  const byCv = new Map<string, Map<string, string[]>>();
+  for (const r of rows) {
+    const cv = String(r.id_chuc_vu);
+    const mk = String(r.module_key);
+    if (!byCv.has(cv)) byCv.set(cv, new Map());
+    byCv.get(cv)!.set(mk, parsePhanQuyenActionText(r.action));
+  }
+  return byCv;
+}
+
+function positionFromChucVu(
+  row: { id: number | string; chuc_vu: string | null; tg_tao?: string | null; tg_cap_nhat: string | null },
+  actionsByModule: Map<string, string[]>,
+  soNhanVien: number,
+): PositionPermission {
+  const idStr = String(row.id);
+  return {
+    id: idStr,
+    id_chuc_vu: idStr,
+    ma_chuc_vu: idStr,
+    ten_chuc_vu: row.chuc_vu ?? '',
+    ten_phong_ban: i18n.t('permission.module.undefined'),
+    mo_ta: null,
+    so_nhan_vien: soNhanVien,
+    quyen_han: buildQuyenHan(actionsByModule),
+    trang_thai: 'Đang hoạt động',
+    tg_cap_nhat: row.tg_cap_nhat ?? row.tg_tao ?? new Date().toISOString(),
+  };
+}
+
+function buildMockRoles(): PositionPermission[] {
+  const fullPerms: ModulePermission[] = SYSTEM_MODULES_CONFIG.map((m) => ({
+    module_id: m.id,
+    module_name: getModuleName(m.id),
+    actions: [...PERMISSION_ACTIONS],
   }));
   return [
     {
@@ -58,6 +146,7 @@ function buildMockRoles(): PositionPermission[] {
   ];
 }
 
+/** Mock; khi Supabase dùng bảng PHAN_QUYEN_SUPABASE_TABLE + chuc_vu. */
 const roleRepo = createRepository<PositionPermission>({
   tableName: 'he_thong_phan_quyen',
   mockData: buildMockRoles(),
@@ -85,10 +174,64 @@ const logRepo = createRepository<AccessLog>({
 });
 
 export const getRoles = async (): Promise<PositionPermission[]> => {
-  return roleRepo.getAll();
+  if (!isSupabase()) return roleRepo.getAll();
+
+  const sb = getSupabase()!;
+  const [cvRes, pqRes, nvRes] = await Promise.all([
+    sb.from('chuc_vu').select('id,chuc_vu,tg_tao,tg_cap_nhat').order('chuc_vu'),
+    sb.from(PHAN_QUYEN_SUPABASE_TABLE).select('id_chuc_vu,module_key,action'),
+    sb.from('danh_sach_quan_nhan').select('id_chuc_vu'),
+  ]);
+
+  if (cvRes.error) throw cvRes.error;
+  if (pqRes.error) throw pqRes.error;
+  if (nvRes.error) throw nvRes.error;
+
+  const byCv = mapsFromPhanQuyenRows(
+    (pqRes.data ?? []) as { id_chuc_vu: number | string; module_key: string; action: string }[],
+  );
+
+  const counts = new Map<string, number>();
+  for (const row of nvRes.data ?? []) {
+    if (row.id_chuc_vu == null) continue;
+    const k = String(row.id_chuc_vu);
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+
+  return (cvRes.data ?? []).map((cv) =>
+    positionFromChucVu(cv, byCv.get(String(cv.id)) ?? new Map(), counts.get(String(cv.id)) ?? 0),
+  );
 };
 
 export const createRole = async (data: RoleFormValues, permissions: ModulePermission[]): Promise<PositionPermission> => {
+  if (isSupabase()) {
+    const sb = getSupabase()!;
+    const { data: row, error } = await sb
+      .from('chuc_vu')
+      .insert({ chuc_vu: data.ten_vai_tro.trim() })
+      .select('id,chuc_vu,tg_tao,tg_cap_nhat')
+      .single();
+    if (error) throw error;
+
+    const permByMod = new Map(permissions.map((p) => [p.module_id, p.actions]));
+    const cvId = Number(row.id);
+    const rows = SYSTEM_MODULES_CONFIG.map((m) => ({
+      id_chuc_vu: cvId,
+      module_key: m.id,
+      action: serializePhanQuyenActions(permByMod.get(m.id) ?? []),
+    }));
+    const { error: pqErr } = await sb.from(PHAN_QUYEN_SUPABASE_TABLE).upsert(rows, {
+      onConflict: 'id_chuc_vu,module_key',
+    });
+    if (pqErr) throw pqErr;
+
+    const modMap = new Map<string, string[]>();
+    for (const r of rows) {
+      modMap.set(r.module_key, parsePhanQuyenActionText(r.action));
+    }
+    return positionFromChucVu(row, modMap, 0);
+  }
+
   const id = `perm-${Date.now()}`;
   const now = new Date().toISOString();
   return roleRepo.insert({
@@ -106,10 +249,40 @@ export const createRole = async (data: RoleFormValues, permissions: ModulePermis
 };
 
 export const deleteRoles = async (ids: string[]): Promise<void> => {
+  if (isSupabase()) {
+    const sb = getSupabase()!;
+    const nums = ids.map((id) => Number(id)).filter((n) => !Number.isNaN(n));
+    if (nums.length === 0) return;
+    const { error } = await sb.from('chuc_vu').delete().in('id', nums);
+    if (error) throw error;
+    return;
+  }
   await roleRepo.remove(ids);
 };
 
-export const updateModulePermissions = async (moduleId: string, updates: { roleId: string; actions: ActionType[] }[]): Promise<void> => {
+export const updateModulePermissions = async (
+  moduleId: string,
+  updates: { roleId: string; actions: string[] }[],
+): Promise<void> => {
+  if (isSupabase()) {
+    const sb = getSupabase()!;
+    const upsertRows = updates.map(({ roleId, actions }) => {
+      const idCV = Number(roleId);
+      if (Number.isNaN(idCV)) return null;
+      return {
+        id_chuc_vu: idCV,
+        module_key: moduleId,
+        action: serializePhanQuyenActions(actions),
+      };
+    }).filter((r): r is NonNullable<typeof r> => r != null);
+    if (upsertRows.length === 0) return;
+    const { error } = await sb.from(PHAN_QUYEN_SUPABASE_TABLE).upsert(upsertRows, {
+      onConflict: 'id_chuc_vu,module_key',
+    });
+    if (error) throw error;
+    return;
+  }
+
   const moduleName = getModuleName(moduleId);
   for (const { roleId, actions } of updates) {
     const role = await roleRepo.getById(roleId);

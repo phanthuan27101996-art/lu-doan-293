@@ -1,11 +1,22 @@
 import type { TrangThaiHoatDong } from '@/lib/constants/trang-thai';
 
-export type ActionType = 'view' | 'create' | 'update' | 'delete' | 'approve' | 'export' | 'import' | 'admin' | 'all';
+export type ActionType =
+  | 'view'
+  | 'create'
+  | 'update'
+  | 'delete'
+  | 'approve'
+  | 'export'
+  | 'import'
+  | 'admin'
+  | 'quan_tri'
+  | 'all';
 
 export interface ModulePermission {
   module_id: string;
   module_name: string;
-  actions: ActionType[];
+  /** Mã quyền tùy ý (view, create, … hoặc quyền tùy chỉnh từ DB). */
+  actions: string[];
 }
 
 export interface PositionPermission {

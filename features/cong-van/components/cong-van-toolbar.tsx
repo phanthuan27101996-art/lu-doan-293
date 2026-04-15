@@ -15,9 +15,23 @@ interface Props {
   onExport: () => void;
   onImport: () => void;
   onDeleteMany: (ids: string[]) => void;
+  canCreate?: boolean;
+  canDelete?: boolean;
+  canImport?: boolean;
+  canExport?: boolean;
 }
 
-const CongVanToolbar: React.FC<Props> = ({ items, onAdd, onExport, onImport, onDeleteMany }) => {
+const CongVanToolbar: React.FC<Props> = ({
+  items,
+  onAdd,
+  onExport,
+  onImport,
+  onDeleteMany,
+  canCreate = true,
+  canDelete = true,
+  canImport = true,
+  canExport = true,
+}) => {
   const { t } = useTranslation();
   const {
     searchTerm,
@@ -82,52 +96,61 @@ const CongVanToolbar: React.FC<Props> = ({ items, onAdd, onExport, onImport, onD
     [donViOptions, filters.don_vi, setFilter, t],
   );
 
-  const mobileActions = useMemo(
-    () => [
-      {
+  const mobileActions = useMemo(() => {
+    const list: { key: string; label: string; icon: typeof Upload; onClick: () => void; description: string }[] = [];
+    if (canImport) {
+      list.push({
         key: 'import',
         label: t('congVan.dm.toolbar.importData'),
         icon: Upload,
         onClick: onImport,
         description: t('congVan.dm.toolbar.importDesc'),
-      },
-      {
+      });
+    }
+    if (canExport) {
+      list.push({
         key: 'export',
         label: t('congVan.dm.toolbar.exportData'),
         icon: Download,
         onClick: onExport,
         description: t('congVan.dm.toolbar.exportDesc'),
-      },
-    ],
-    [onImport, onExport, t],
-  );
+      });
+    }
+    return list;
+  }, [canExport, canImport, onExport, onImport, t]);
 
   const renderActions = (
     <>
-      <Tooltip content={t('congVan.dm.toolbar.importData')} placement="bottom">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onImport}
-          className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted"
-        >
-          <Upload className="w-4 h-4" />
+      {canImport ? (
+        <Tooltip content={t('congVan.dm.toolbar.importData')} placement="bottom">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onImport}
+            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted"
+          >
+            <Upload className="w-4 h-4" />
+          </Button>
+        </Tooltip>
+      ) : null}
+      {canExport ? (
+        <Tooltip content={t('congVan.dm.toolbar.exportData')} placement="bottom">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onExport}
+            className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted"
+          >
+            <Download className="w-4 h-4" />
+          </Button>
+        </Tooltip>
+      ) : null}
+      {canCreate ? (
+        <Button onClick={onAdd} size="sm" className="bg-primary text-white hover:bg-primary/90 shadow-sm h-8 px-3">
+          <Plus className="w-4 h-4 mr-1.5" />
+          <span className="text-xs">{BTN_ADD()}</span>
         </Button>
-      </Tooltip>
-      <Tooltip content={t('congVan.dm.toolbar.exportData')} placement="bottom">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onExport}
-          className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-8 w-8 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted"
-        >
-          <Download className="w-4 h-4" />
-        </Button>
-      </Tooltip>
-      <Button onClick={onAdd} size="sm" className="bg-primary text-white hover:bg-primary/90 shadow-sm h-8 px-3">
-        <Plus className="w-4 h-4 mr-1.5" />
-        <span className="text-xs">{BTN_ADD()}</span>
-      </Button>
+      ) : null}
     </>
   );
 
@@ -141,8 +164,8 @@ const CongVanToolbar: React.FC<Props> = ({ items, onAdd, onExport, onImport, onD
       filters={renderFilters}
       filterGroups={filterGroups}
       mobileActions={mobileActions}
-      onAdd={onAdd}
-      onDeleteMany={() => onDeleteMany(Array.from(selectedIds))}
+      onAdd={canCreate ? onAdd : undefined}
+      onDeleteMany={canDelete ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}

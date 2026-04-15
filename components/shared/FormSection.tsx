@@ -7,6 +7,7 @@ interface FormSectionProps {
   children: React.ReactNode;
   className?: string;
   variant?: 'primary' | 'muted';
+  headerAction?: React.ReactNode;
 }
 
 /** Section trong form – dùng chung Section (cùng style với DetailSection) */
