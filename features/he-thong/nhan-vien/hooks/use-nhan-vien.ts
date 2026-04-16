@@ -1,6 +1,16 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getEmployees, getEmployeeById, createEmployee, updateEmployee, deleteEmployees, updateEmployeeStatus, bulkUpdateEmployees, restoreEmployees } from "../services/nhan-vien-service";
+import {
+  getEmployees,
+  getEmployeeById,
+  createEmployee,
+  updateEmployee,
+  deleteEmployees,
+  updateEmployeeStatus,
+  bulkUpdateEmployees,
+  restoreEmployees,
+  setEmployeeIsAdmin,
+} from "../services/nhan-vien-service";
 import { EmployeeFormValues } from "../core/schema";
 import { Employee } from "../core/types";
 import { toast } from "sonner";
@@ -68,6 +78,19 @@ export const useBulkUpdateEmployees = (onSuccess?: () => void) => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       toast.success(i18n.t('employee.toast.bulkUpdateSuccess', { count: variables.ids.length }));
+      onSuccess?.();
+    },
+    onError: (err: any) => toast.error(`Lỗi: ${err.message}`),
+  });
+};
+
+export const useSetEmployeeIsAdmin = (onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, isAdmin }: { id: string; isAdmin: boolean }) => setEmployeeIsAdmin(id, isAdmin),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      toast.success(i18n.t('employee.toast.adminUpdateSuccess'));
       onSuccess?.();
     },
     onError: (err: any) => toast.error(`Lỗi: ${err.message}`),

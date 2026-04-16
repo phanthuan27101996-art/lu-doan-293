@@ -201,6 +201,22 @@ export const deleteEmployees = async (ids: string[]): Promise<void> => {
   await repo.remove(ids);
 };
 
+/** Bật/tắt cờ `is_admin` trên `danh_sach_quan_nhan` (Supabase + mock). */
+export async function setEmployeeIsAdmin(id: string, isAdmin: boolean): Promise<void> {
+  const existing = await repo.getById(id);
+  if (!existing) throw new Error(i18n.t('employee.service.notFound'));
+
+  if (isSupabase()) {
+    await repo.update(id, { is_admin: isAdmin } as Partial<Employee>);
+    return;
+  }
+
+  await repo.update(id, {
+    ...(existing as Employee),
+    is_admin: isAdmin,
+  });
+}
+
 export const restoreEmployees = async (employees: Employee[]): Promise<void> => {
   for (const emp of employees) {
     const { ten_chuc_vu: _tenChucVu, ...row } = emp;

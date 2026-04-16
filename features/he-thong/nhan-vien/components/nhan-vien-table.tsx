@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, Phone, Briefcase } from 'lucide-react';
+import { Edit, Trash2, Phone, Briefcase, ShieldCheck } from 'lucide-react';
 import { Employee } from '../core/types';
 import { useEmployeeStore } from '../store/useEmployeeStore';
 import { cn, formatDate, getAvatarUrl } from '../../../../lib/utils';
@@ -49,11 +49,28 @@ const EmployeeTable: React.FC<Props> = ({
               className="w-8 h-8 rounded-full border border-border shadow-sm object-cover shrink-0"
               alt={item.ho_ten}
             />
-            <div className="flex flex-col min-w-0">
-              <span className="font-semibold text-foreground text-sm truncate">{item.ho_ten}</span>
-              <span className="text-xs text-muted-foreground font-mono truncate">id {item.id}</span>
-            </div>
+            <span className="font-semibold text-foreground text-sm truncate min-w-0">{item.ho_ten}</span>
           </div>
+        );
+      case 'id':
+        return (
+          <span className="text-body-sm font-mono text-muted-foreground tabular-nums truncate block" title={item.id}>
+            {item.id}
+          </span>
+        );
+      case 'is_admin':
+        return (
+          <span
+            className={cn(
+              'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium w-fit max-w-full',
+              item.is_admin
+                ? 'bg-violet-100 text-violet-800 dark:bg-violet-950/50 dark:text-violet-200'
+                : 'bg-muted text-muted-foreground',
+            )}
+          >
+            <ShieldCheck size={12} className="shrink-0 opacity-80" aria-hidden />
+            <span className="truncate">{item.is_admin ? t('employee.detail.adminYes') : t('employee.detail.adminNo')}</span>
+          </span>
         );
       case 'lien_he':
         return (
@@ -145,13 +162,29 @@ const EmployeeTable: React.FC<Props> = ({
               />
             </div>
           </div>
-          <p className="text-xs text-muted-foreground font-mono mt-0.5">id {item.id}</p>
+          <p className="text-xs text-muted-foreground font-mono mt-0.5 truncate" title={item.id}>
+            id {item.id}
+          </p>
         </div>
       </div>
       <div className="grid grid-cols-1 gap-2 px-3 py-2 bg-muted/30 rounded-lg mb-3 text-body-sm">
         <div>
           <p className="text-muted-foreground mb-0.5">{t('employee.position')}</p>
           <p className="font-medium text-foreground truncate">{item.ten_chuc_vu || '—'}</p>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-muted-foreground shrink-0">{t('employee.store.adminCol')}</p>
+          <span
+            className={cn(
+              'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+              item.is_admin
+                ? 'bg-violet-100 text-violet-800 dark:bg-violet-950/50 dark:text-violet-200'
+                : 'bg-muted text-muted-foreground',
+            )}
+          >
+            <ShieldCheck size={11} className="shrink-0" aria-hidden />
+            {item.is_admin ? t('employee.detail.adminYes') : t('employee.detail.adminNo')}
+          </span>
         </div>
       </div>
       <div className="flex justify-between items-center pt-2.5 border-t border-border">

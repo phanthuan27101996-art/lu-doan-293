@@ -15,7 +15,7 @@ import BulkEditSheet from './components/nhan-vien-bulk-edit';
 import ImportDialog from '../../../components/shared/ImportDialog';
 import ExportDialog from '../../../components/shared/ExportDialog';
 
-import { useEmployees, useDeleteWithUndo } from './hooks/use-nhan-vien';
+import { useEmployees, useDeleteWithUndo, useSetEmployeeIsAdmin } from './hooks/use-nhan-vien';
 import { useEmployeeStore } from './store/useEmployeeStore';
 import { Employee } from './core/types';
 import { useConfirmStore } from '../../../store/useConfirmStore';
@@ -25,11 +25,43 @@ import { useListWithFilter } from '../../../lib/hooks';
 import { matchesSearchTerm } from '../../../lib/searchUtils';
 import { useExportData } from '../../../lib/useExportData';
 import { useModulePermission } from '@/hooks/use-module-permission';
+import { useAuthStore } from '@/store/useStore';
+import { findEmployeeByAuthIdentity } from '@/lib/phone-auth';
 import ModulePermissionDenied from '@/components/shared/ModulePermissionDenied';
 
 type FormOrigin = 'list' | 'detail';
 
-const NHAN_VIEN_SEARCHABLE_KEYS: string[] = ['id', 'ho_ten', 'ten_chuc_vu', 'so_dien_thoai', 'tg_tao', 'tg_cap_nhat'];
+const NHAN_VIEN_SEARCHABLE_KEYS: string[] = [
+  'id',
+  'ho_ten',
+  'ten_chuc_vu',
+  'chuc_vu_id',
+  'so_dien_thoai',
+  'is_admin',
+  'tg_tao',
+  'tg_cap_nhat',
+];
+
+function getEmployeeSortValue(emp: Employee, column: string): string | number {
+  switch (column) {
+    case 'lien_he':
+      return emp.so_dien_thoai ?? '';
+    case 'is_admin':
+      return emp.is_admin === true ? 1 : 0;
+    case 'id':
+      return emp.id;
+    case 'ho_ten':
+      return emp.ho_ten ?? '';
+    case 'ten_chuc_vu':
+      return emp.ten_chuc_vu ?? '';
+    case 'tg_tao':
+      return emp.tg_tao ?? '';
+    case 'tg_cap_nhat':
+      return emp.tg_cap_nhat ?? '';
+    default:
+      return '';
+  }
+}
 
 const EmployeePage: React.FC = () => {
   const { t } = useTranslation();
@@ -50,6 +82,7 @@ const EmployeePage: React.FC = () => {
       { key: 'ho_ten', label: t('employee.name') },
       { key: 'so_dien_thoai', label: t('employee.phone') },
       { key: 'ten_chuc_vu', label: t('employee.position') },
+      { key: 'is_admin_text', label: t('employee.store.adminCol') },
       { key: 'tg_tao_text', label: t('employee.store.createdCol') },
       { key: 'tg_cap_nhat_text', label: t('employee.store.updatedCol') },
     ],
@@ -93,9 +126,16 @@ const EmployeePage: React.FC = () => {
 
   const { searchTerm, filters, sort, resetState, clearSelection, selectedIds, pagination, columns, setFilter } = useEmployeeStore();
 
+  const user = useAuthStore((s) => s.user);
   const { data: employees = [], isLoading } = useEmployees();
   const { deleteWithUndo } = useDeleteWithUndo();
+  const setAdminMut = useSetEmployeeIsAdmin();
   const confirm = useConfirmStore(state => state.confirm);
+
+  const currentEmployee = useMemo(
+    () => findEmployeeByAuthIdentity(user, employees),
+    [user, employees],
+  );
 
   useEffect(() => {
     return () => resetState();
@@ -117,13 +157,14 @@ const EmployeePage: React.FC = () => {
 
   const filteredEmployees = useListWithFilter(employees, searchTerm, filters, filterFn);
 
-  // Client-side sort
+  // Client-side sort (map id cột UI → trường Employee, ví dụ lien_he → so_dien_thoai)
   const sortedEmployees = useMemo(() => {
     if (!sort.column || !sort.direction) return filteredEmployees;
+    const col = sort.column;
     const sorted = [...filteredEmployees];
-    sorted.sort((a: any, b: any) => {
-      const aVal = a[sort.column!] ?? '';
-      const bVal = b[sort.column!] ?? '';
+    sorted.sort((a, b) => {
+      const aVal = getEmployeeSortValue(a, col);
+      const bVal = getEmployeeSortValue(b, col);
       let cmp = 0;
       if (typeof aVal === 'number' && typeof bVal === 'number') {
         cmp = aVal - bVal;
@@ -142,10 +183,11 @@ const EmployeePage: React.FC = () => {
       ho_ten: emp.ho_ten,
       so_dien_thoai: emp.so_dien_thoai,
       ten_chuc_vu: emp.ten_chuc_vu ?? '',
+      is_admin_text: emp.is_admin ? t('employee.detail.adminYes') : t('employee.detail.adminNo'),
       tg_tao_text: emp.tg_tao ? formatDate(emp.tg_tao) : '',
       tg_cap_nhat_text: emp.tg_cap_nhat ? formatDate(emp.tg_cap_nhat) : '',
     }),
-    [],
+    [t],
   );
 
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } = useExportData({
@@ -189,6 +231,26 @@ const EmployeePage: React.FC = () => {
         }
     });
   };
+
+  const handleToggleAdmin = useCallback(() => {
+    if (!viewingEmp || !perm.isAdmin) return;
+    const nextAdmin = !viewingEmp.is_admin;
+    if (currentEmployee?.id === viewingEmp.id && !nextAdmin) {
+      toast.error(t('employee.adminCannotRevokeSelf'));
+      return;
+    }
+    confirm({
+      title: nextAdmin ? t('employee.adminConfirmGrantTitle') : t('employee.adminConfirmRevokeTitle'),
+      message: nextAdmin
+        ? t('employee.adminConfirmGrantMessage', { name: viewingEmp.ho_ten })
+        : t('employee.adminConfirmRevokeMessage', { name: viewingEmp.ho_ten }),
+      variant: nextAdmin ? 'info' : 'warning',
+      confirmText: t('employee.adminConfirmButton'),
+      onConfirm: async () => {
+        await setAdminMut.mutateAsync({ id: viewingEmp.id, isAdmin: nextAdmin });
+      },
+    });
+  }, [viewingEmp, perm.isAdmin, currentEmployee?.id, confirm, setAdminMut, t]);
 
   const handleDeleteMany = (ids: string[]) => {
       if (!perm.canDelete) return;
@@ -311,6 +373,9 @@ const EmployeePage: React.FC = () => {
                 onDelete={handleDelete}
                 canUpdate={perm.canUpdate}
                 canDelete={perm.canDelete}
+                canToggleAdmin={perm.isAdmin}
+                onToggleAdmin={perm.isAdmin ? handleToggleAdmin : undefined}
+                isTogglingAdmin={setAdminMut.isPending}
             />
         )}
       </AnimatePresence>

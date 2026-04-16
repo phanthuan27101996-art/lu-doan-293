@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { User, Phone, Briefcase, Edit, Trash2, Clock, Calendar, Printer } from 'lucide-react';
+import { User, Phone, Briefcase, Edit, Trash2, Clock, Calendar, Printer, ShieldCheck } from 'lucide-react';
 import { Employee } from '../core/types';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
@@ -18,6 +18,10 @@ interface Props {
   onDelete: (id: string) => void;
   canUpdate?: boolean;
   canDelete?: boolean;
+  /** Chỉ tài khoản `is_admin` — bật/tắt quản trị hệ thống cho quân nhân khác. */
+  canToggleAdmin?: boolean;
+  onToggleAdmin?: () => void;
+  isTogglingAdmin?: boolean;
 }
 
 const EmployeeDetail: React.FC<Props> = ({
@@ -27,30 +31,46 @@ const EmployeeDetail: React.FC<Props> = ({
   onDelete,
   canUpdate = true,
   canDelete = true,
+  canToggleAdmin = false,
+  onToggleAdmin,
+  isTogglingAdmin = false,
 }) => {
   const { t } = useTranslation();
 
-  const toolbarActions: DetailToolbarAction[] = [
-    {
-      label: t('employee.detail.print'),
-      icon: <Printer />,
-      onClick: () =>
-        window.open(
-          `${window.location.origin}/ho-so-nhan-vien/${encodeURIComponent(data.id)}`,
-          '_blank',
-          'noopener,noreferrer',
-        ),
-      variant: 'secondary',
-    },
-    {
-      label: t('employee.detail.callPhone'),
-      icon: <Phone />,
-      onClick: () => {
-        window.location.href = `tel:${data.so_dien_thoai}`;
+  const toolbarActions: DetailToolbarAction[] = useMemo(() => {
+    const actions: DetailToolbarAction[] = [];
+    if (canToggleAdmin && onToggleAdmin) {
+      actions.push({
+        label: data.is_admin ? t('employee.detail.revokeAdmin') : t('employee.detail.grantAdmin'),
+        icon: <ShieldCheck />,
+        onClick: onToggleAdmin,
+        variant: data.is_admin ? 'warning' : 'violet',
+        disabled: isTogglingAdmin,
+      });
+    }
+    actions.push(
+      {
+        label: t('employee.detail.print'),
+        icon: <Printer />,
+        onClick: () =>
+          window.open(
+            `${window.location.origin}/ho-so-nhan-vien/${encodeURIComponent(data.id)}`,
+            '_blank',
+            'noopener,noreferrer',
+          ),
+        variant: 'secondary',
       },
-      variant: 'success',
-    },
-  ];
+      {
+        label: t('employee.detail.callPhone'),
+        icon: <Phone />,
+        onClick: () => {
+          window.location.href = `tel:${data.so_dien_thoai}`;
+        },
+        variant: 'success',
+      },
+    );
+    return actions;
+  }, [canToggleAdmin, onToggleAdmin, data.id, data.is_admin, data.so_dien_thoai, isTogglingAdmin, t]);
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full">
@@ -112,6 +132,11 @@ const EmployeeDetail: React.FC<Props> = ({
             <DetailField label={t('employee.name')} value={data.ho_ten} icon={<User size={12} />} />
             <DetailField label={t('employee.phone')} value={data.so_dien_thoai} icon={<Phone size={12} />} />
             <DetailField label={t('employee.position')} value={data.ten_chuc_vu ?? '—'} icon={<Briefcase size={12} />} />
+            <DetailField
+              label={t('employee.detail.adminRole')}
+              value={data.is_admin ? t('employee.detail.adminYes') : t('employee.detail.adminNo')}
+              icon={<ShieldCheck size={12} />}
+            />
           </DetailFieldGrid>
         </DetailSection>
 
