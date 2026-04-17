@@ -9,6 +9,7 @@ import DetailFieldGrid from '../../../components/shared/DetailFieldGrid';
 import Button from '../../../components/ui/Button';
 import { formatDate } from '@/lib/utils';
 import { BTN_CLOSE, BTN_EDIT, BTN_DELETE } from '../../../lib/button-labels';
+import { getYoutubeEmbedSrc, isDirectVideoUrl, parseYoutubeVideoId } from '../utils/youtube';
 
 interface Props {
   data: KhoVideo;
@@ -28,6 +29,8 @@ const KhoVideoDetail: React.FC<Props> = ({
   canDelete = true,
 }) => {
   const { t } = useTranslation();
+  const ytId = parseYoutubeVideoId(data.link);
+  const direct = data.link ? isDirectVideoUrl(data.link) : false;
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full">
@@ -74,6 +77,25 @@ const KhoVideoDetail: React.FC<Props> = ({
           <p className="text-xs text-muted-foreground mb-1">{data.bo_suu_tap || '—'}</p>
           <h2 className="text-base font-bold text-foreground leading-snug">{data.ten_video}</h2>
         </div>
+
+        {data.link && ytId ? (
+          <div className="rounded-xl overflow-hidden border border-border bg-black/5 shadow-sm">
+            <div className="aspect-video w-full">
+              <iframe
+                title={`${data.ten_video} — ${t('khoVideo.dm.detail.embedPlayer')}`}
+                src={getYoutubeEmbedSrc(ytId)}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                referrerPolicy="strict-origin-when-cross-origin"
+              />
+            </div>
+          </div>
+        ) : data.link && direct ? (
+          <div className="rounded-xl overflow-hidden border border-border bg-black shadow-sm">
+            <video src={data.link} controls className="w-full max-h-[min(70vh,520px)]" playsInline />
+          </div>
+        ) : null}
 
         {data.ghi_chu?.trim() ? (
           <DetailSection title={t('khoVideo.dm.detail.ghiChu')} icon={<Video size={14} />}>

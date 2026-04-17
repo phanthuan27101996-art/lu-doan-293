@@ -9,7 +9,7 @@ const MOCK_SEED: TaiLieu[] = [
   {
     id: '1',
     nhom_tai_lieu: 'Hướng dẫn nội bộ',
-    ten_tai_lieu: 'Quy chế làm việc Lữ đoàn 293',
+    ten_tai_lieu: 'Quy chế làm việc (mẫu)',
     link: 'https://example.com/quy-che-293',
     ghi_chu: 'Bản cập nhật 2025',
     id_nguoi_tao: null,

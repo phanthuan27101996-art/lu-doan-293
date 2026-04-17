@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { UsersRound, ExternalLink, Edit, Trash2, UserRound, ImageIcon } from 'lucide-react';
+import { UsersRound, ExternalLink, Edit, Trash2, UserRound, ImageIcon, X } from 'lucide-react';
 import type { DoanCoSo } from '../core/types';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../components/shared/GenericDrawer';
 import DetailSection from '../../../components/shared/DetailSection';
@@ -28,6 +29,20 @@ const DoanCoSoDetail: React.FC<Props> = ({
   canDelete = true,
 }) => {
   const { t } = useTranslation();
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!lightboxUrl) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setLightboxUrl(null);
+      }
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => document.removeEventListener('keydown', onKey, true);
+  }, [lightboxUrl]);
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full">
@@ -61,6 +76,7 @@ const DoanCoSoDetail: React.FC<Props> = ({
   );
 
   return (
+    <>
     <GenericDrawer
       title={t('doanCoSo.dm.detail.title')}
       subtitle={`id ${data.id}`}
@@ -88,12 +104,19 @@ const DoanCoSoDetail: React.FC<Props> = ({
             <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2 list-none p-0 m-0">
               {data.hinh_anh.map((src, idx) => (
                 <li key={`${src}-${idx}`} className="aspect-video rounded-lg border border-border overflow-hidden bg-muted/30">
-                  <img
-                    src={src}
-                    alt={`${data.ten} — ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
+                  <button
+                    type="button"
+                    className="w-full h-full block p-0 border-0 bg-transparent cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg"
+                    onClick={() => setLightboxUrl(src)}
+                    aria-label={t('doanCoSo.dm.detail.viewImageFull', { n: idx + 1 })}
+                  >
+                    <img
+                      src={src}
+                      alt=""
+                      className="w-full h-full object-cover pointer-events-none"
+                      loading="lazy"
+                    />
+                  </button>
                 </li>
               ))}
             </ul>
@@ -133,6 +156,39 @@ const DoanCoSoDetail: React.FC<Props> = ({
         </DetailSection>
       </div>
     </GenericDrawer>
+
+    {lightboxUrl
+      ? createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('doanCoSo.dm.detail.imageLightboxTitle')}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 sm:p-8"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <button
+              type="button"
+              className="absolute top-3 right-3 z-[102] rounded-full bg-background/95 p-2 text-foreground shadow-lg border border-border hover:bg-accent transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxUrl(null);
+              }}
+              aria-label={t('common.close')}
+            >
+              <X size={20} aria-hidden />
+            </button>
+            <img
+              src={lightboxUrl}
+              alt=""
+              className="max-w-full max-h-[min(90vh,100%)] w-auto h-auto object-contain rounded-md shadow-2xl select-none"
+              onClick={(e) => e.stopPropagation()}
+              draggable={false}
+            />
+          </div>,
+          document.body,
+        )
+      : null}
+    </>
   );
 };
 

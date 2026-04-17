@@ -2,8 +2,8 @@
  * Thương hiệu ứng dụng cố định — không có màn hình chỉnh sửa.
  * Giữ khớp với `index.html` (favicon / og) và `vite.config.ts` (PWA icons).
  */
-export const APP_DISPLAY_NAME = 'Lữ đoàn 293';
-export const APP_TAGLINE = 'Ứng dụng quản lý';
+export const APP_DISPLAY_NAME = 'Sổ tay học tập';
+export const APP_TAGLINE = 'Tra cứu & học tập';
 /** File trong thư mục `public/` */
 export const APP_LOGO_PATH = '/app-icon.jpg';
 

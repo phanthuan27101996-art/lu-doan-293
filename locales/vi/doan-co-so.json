@@ -41,6 +41,8 @@
   "doanCoSo.dm.detail.nguoiTao": "Người tạo",
   "doanCoSo.dm.detail.createdAt": "Tạo lúc",
   "doanCoSo.dm.detail.updatedAt": "Cập nhật",
+  "doanCoSo.dm.detail.viewImageFull": "Xem ảnh {{n}} phóng to",
+  "doanCoSo.dm.detail.imageLightboxTitle": "Xem ảnh",
   "doanCoSo.dm.toolbar.nhom": "Nhóm",
   "doanCoSo.dm.toolbar.nhomEmpty": "(Chưa nhóm)",
   "doanCoSo.dm.toolbar.importData": "Nhập dữ liệu",

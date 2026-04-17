@@ -18,9 +18,9 @@ export default defineConfig(() => {
           registerType: 'autoUpdate',
           includeAssets: ['favicon.svg', 'app-icon.jpg'],
           manifest: {
-            name: 'Lữ đoàn 293',
-            short_name: 'Lữ đoàn 293',
-            description: 'Ứng dụng quản lý Lữ đoàn 293',
+            name: 'Sổ tay học tập',
+            short_name: 'Sổ tay học tập',
+            description: 'Sổ tay học tập — tra cứu tài liệu và học tập nội bộ',
             theme_color: '#b91c1c',
             background_color: '#fefce8',
             display: 'standalone',

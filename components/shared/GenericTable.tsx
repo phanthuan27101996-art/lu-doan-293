@@ -42,6 +42,8 @@ interface GenericTableProps<T> {
   // Renders
   renderCell: (colId: string, item: T) => React.ReactNode;
   renderMobileCard: (item: T, isSelected: boolean) => React.ReactNode;
+  /** Khi có: khối desktop (md+) hiển thị lưới thẻ thay cho bảng (vd. Trang tin). */
+  renderDesktopCard?: (item: T, isSelected: boolean) => React.ReactNode;
 
   // Actions
   onRowClick?: (item: T) => void;
@@ -82,7 +84,7 @@ function GenericTable<T>({
   selectedIds, onToggleSelection, onToggleAll,
   page, pageSize, onPageChange, onPageSizeChange,
   sort, onSort,
-  renderCell, renderMobileCard,
+  renderCell, renderMobileCard, renderDesktopCard,
   onRowClick, keyExtractor,
   density = 'default',
   enableVirtualScroll = true,
@@ -230,35 +232,54 @@ function GenericTable<T>({
           <LoadingSpinnerWithText text={loadingText} centered />
         </div>
         <div className="hidden md:block flex-1 min-h-0 overflow-hidden">
-          <table className="w-full text-sm border-separate border-spacing-0">
-            <thead>
-              <tr className="bg-muted/30 border-b border-border">
-                <th className="w-[44px] px-3 py-2 border-b border-border"><div className="w-4 h-4 bg-muted rounded animate-pulse" /></th>
-                {dataColumns.map(col => (
-                  <th key={col.id} className="px-4 py-2 border-b border-border min-w-0" style={getColumnCellStyle(col)}>
-                    <div className="h-3 w-16 bg-muted rounded animate-pulse" />
-                  </th>
+          {renderDesktopCard ? (
+            <div className="h-full p-3 overflow-hidden">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-card rounded-xl border border-border p-3.5 animate-pulse flex gap-3 min-h-[5.5rem]"
+                  >
+                    <div className="w-28 h-24 shrink-0 rounded-lg bg-muted" />
+                    <div className="flex-1 min-w-0 flex flex-col justify-center gap-2">
+                      <div className="h-4 w-[85%] bg-muted/70 rounded" />
+                      <div className="h-3 w-[60%] bg-muted/50 rounded" />
+                    </div>
+                  </div>
                 ))}
-                <th className="w-[80px] px-3 py-2 border-b border-border"><div className="h-3 w-12 bg-muted rounded animate-pulse mx-auto" /></th>
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i} className="[&>td]:border-b [&>td]:border-border">
-                  <td className="px-3 py-2.5"><div className="w-4 h-4 bg-muted/60 rounded animate-pulse" /></td>
+              </div>
+            </div>
+          ) : (
+            <table className="w-full text-sm border-separate border-spacing-0">
+              <thead>
+                <tr className="bg-muted/30 border-b border-border">
+                  <th className="w-[44px] px-3 py-2 border-b border-border"><div className="w-4 h-4 bg-muted rounded animate-pulse" /></th>
                   {dataColumns.map(col => (
-                    <td key={col.id} className="px-4 py-2.5">
-                      <div className="space-y-1.5">
-                        <div className={cn("h-3 bg-muted/60 rounded animate-pulse", i % 2 === 0 ? "w-3/4" : "w-1/2")} />
-                        {col.id === 'ho_ten' && <div className="h-2.5 w-1/3 bg-muted/40 rounded animate-pulse" />}
-                      </div>
-                    </td>
+                    <th key={col.id} className="px-4 py-2 border-b border-border min-w-0" style={getColumnCellStyle(col)}>
+                      <div className="h-3 w-16 bg-muted rounded animate-pulse" />
+                    </th>
                   ))}
-                  <td className="px-3 py-2.5"><div className="flex gap-1 justify-center">{[1,2,3].map(n => <div key={n} className="w-6 h-6 bg-muted/40 rounded animate-pulse" />)}</div></td>
+                  <th className="w-[80px] px-3 py-2 border-b border-border"><div className="h-3 w-12 bg-muted rounded animate-pulse mx-auto" /></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="[&>td]:border-b [&>td]:border-border">
+                    <td className="px-3 py-2.5"><div className="w-4 h-4 bg-muted/60 rounded animate-pulse" /></td>
+                    {dataColumns.map(col => (
+                      <td key={col.id} className="px-4 py-2.5">
+                        <div className="space-y-1.5">
+                          <div className={cn("h-3 bg-muted/60 rounded animate-pulse", i % 2 === 0 ? "w-3/4" : "w-1/2")} />
+                          {col.id === 'ho_ten' && <div className="h-2.5 w-1/3 bg-muted/40 rounded animate-pulse" />}
+                        </div>
+                      </td>
+                    ))}
+                    <td className="px-3 py-2.5"><div className="flex gap-1 justify-center">{[1,2,3].map(n => <div key={n} className="w-6 h-6 bg-muted/40 rounded animate-pulse" />)}</div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
         <div className="md:hidden flex-1 space-y-3 px-3 pt-1 overflow-hidden">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -282,13 +303,41 @@ function GenericTable<T>({
   return (
     <div className="flex flex-col h-full bg-card overflow-hidden">
 
-      {/* 1. DESKTOP VIEW with scroll shadows */}
+      {/* 1. DESKTOP VIEW: lưới thẻ (renderDesktopCard) hoặc bảng + scroll shadows */}
       <div className="hidden md:block flex-1 min-h-0 relative">
-        {/* Scroll shadow overlays */}
-        <div className={cn("absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-card/80 to-transparent z-[4] pointer-events-none transition-opacity", scrollShadow.left ? "opacity-100" : "opacity-0")} />
-        <div className={cn("absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-card/80 to-transparent z-[4] pointer-events-none transition-opacity", scrollShadow.right ? "opacity-100" : "opacity-0")} />
+        {renderDesktopCard ? (
+          <div
+            ref={(el) => {
+              (scrollRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+            }}
+            className="h-full overflow-auto custom-scrollbar"
+            style={{ overscrollBehavior: 'contain' }}
+          >
+            {data.length === 0 ? (
+              <div className="py-16 px-3">
+                <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} />
+              </div>
+            ) : (
+              <div className="p-3 grid grid-cols-1 xl:grid-cols-2 gap-3">
+                {paginatedData.map((item) => {
+                  const itemId = keyExtractor(item);
+                  const isSelected = selectedIds.has(itemId);
+                  return (
+                    <div key={itemId} className="transition-all active:scale-[0.98]">
+                      {renderDesktopCard(item, isSelected)}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Scroll shadow overlays */}
+            <div className={cn("absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-card/80 to-transparent z-[4] pointer-events-none transition-opacity", scrollShadow.left ? "opacity-100" : "opacity-0")} />
+            <div className={cn("absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-card/80 to-transparent z-[4] pointer-events-none transition-opacity", scrollShadow.right ? "opacity-100" : "opacity-0")} />
 
-        <div ref={(el) => { (scrollRef as any).current = el; (virtualParentRef as any).current = el; }} className="h-full overflow-auto custom-scrollbar" style={{ overscrollBehavior: 'contain' }}>
+            <div ref={(el) => { (scrollRef as any).current = el; (virtualParentRef as any).current = el; }} className="h-full overflow-auto custom-scrollbar" style={{ overscrollBehavior: 'contain' }}>
           <table className="text-sm text-left border-separate border-spacing-0" style={{ minWidth: tableMinWidth, width: '100%' }}>
             <thead className="sticky top-0 z-[2]">
               {renderSummaryRow && (
@@ -507,7 +556,9 @@ function GenericTable<T>({
               )}
             </tbody>
           </table>
-        </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* 2. MOBILE VIEW */}

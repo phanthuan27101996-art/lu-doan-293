@@ -17,7 +17,6 @@ import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../lib/button-labels';
 import { useListWithFilter } from '../../../lib/hooks';
 import { useExportData } from '../../../lib/useExportData';
 import { useModulePermission } from '@/hooks/use-module-permission';
-import ModulePermissionDenied from '@/components/shared/ModulePermissionDenied';
 import { Position } from './core/types';
 import type { PositionFilters } from './store/usePositionStore';
 
@@ -146,7 +145,6 @@ const PositionPage: React.FC = () => {
   };
 
   const handleExport = () => {
-    if (!perm.canView) return;
     if (filteredPositions.length === 0) {
       toast.warning(t('position.noExportData'));
       return;
@@ -170,14 +168,6 @@ const PositionPage: React.FC = () => {
     return (
       <div className="flex flex-col h-page items-center justify-center min-h-[40vh]" aria-busy="true">
         <div className="h-10 w-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-      </div>
-    );
-  }
-
-  if (!perm.canView) {
-    return (
-      <div className="flex flex-col h-page">
-        <ModulePermissionDenied />
       </div>
     );
   }

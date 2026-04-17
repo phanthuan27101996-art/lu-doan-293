@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { Scale, ExternalLink, Edit, Trash2, UserRound, Paperclip } from 'lucide-react';
+import { Scale, ExternalLink, Edit, Trash2, UserRound, Paperclip, X } from 'lucide-react';
 import type { MoiTuanMotDieuLuat } from '../core/types';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../components/shared/GenericDrawer';
 import DetailSection from '../../../components/shared/DetailSection';
@@ -29,6 +30,20 @@ const MoiTuanMotDieuLuatDetail: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const [imgBroken, setImgBroken] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setLightboxOpen(false);
+      }
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => document.removeEventListener('keydown', onKey, true);
+  }, [lightboxOpen]);
 
   const renderFooter = (
     <div className="flex items-center justify-between w-full">
@@ -62,6 +77,7 @@ const MoiTuanMotDieuLuatDetail: React.FC<Props> = ({
   );
 
   return (
+    <>
     <GenericDrawer
       title={t('moiTuanMotDieuLuat.dm.detail.title')}
       subtitle={`${data.nam_thang_tuan} · id ${data.id}`}
@@ -86,13 +102,20 @@ const MoiTuanMotDieuLuatDetail: React.FC<Props> = ({
             {data.hinh_anh && !imgBroken ? (
               <div className="col-span-full">
                 <p className="text-xs font-medium text-muted-foreground mb-2">{t('moiTuanMotDieuLuat.dm.form.hinhAnh')}</p>
-                {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- onError: fallback khi ảnh lỗi */}
-                <img
-                  src={data.hinh_anh}
-                  alt=""
-                  className="max-h-48 rounded-lg border border-border object-contain"
-                  onError={() => setImgBroken(true)}
-                />
+                <button
+                  type="button"
+                  className="block p-0 border-0 bg-transparent rounded-lg cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  onClick={() => setLightboxOpen(true)}
+                  aria-label={t('moiTuanMotDieuLuat.dm.detail.viewImageFull')}
+                >
+                  {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- onError: fallback khi ảnh lỗi */}
+                  <img
+                    src={data.hinh_anh}
+                    alt=""
+                    className="max-h-48 rounded-lg border border-border object-contain pointer-events-none"
+                    onError={() => setImgBroken(true)}
+                  />
+                </button>
               </div>
             ) : data.hinh_anh ? (
               <div className="col-span-full">
@@ -157,6 +180,39 @@ const MoiTuanMotDieuLuatDetail: React.FC<Props> = ({
         </DetailSection>
       </div>
     </GenericDrawer>
+
+    {lightboxOpen && data.hinh_anh && !imgBroken
+      ? createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('moiTuanMotDieuLuat.dm.detail.imageLightboxTitle')}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 sm:p-8"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <button
+              type="button"
+              className="absolute top-3 right-3 z-[102] rounded-full bg-background/95 p-2 text-foreground shadow-lg border border-border hover:bg-accent transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxOpen(false);
+              }}
+              aria-label={t('common.close')}
+            >
+              <X size={20} aria-hidden />
+            </button>
+            <img
+              src={data.hinh_anh}
+              alt=""
+              className="max-w-full max-h-[min(90vh,100%)] w-auto h-auto object-contain rounded-md shadow-2xl select-none"
+              onClick={(e) => e.stopPropagation()}
+              draggable={false}
+            />
+          </div>,
+          document.body,
+        )
+      : null}
+    </>
   );
 };
 

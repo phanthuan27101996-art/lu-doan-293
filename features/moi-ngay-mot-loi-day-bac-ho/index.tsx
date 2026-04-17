@@ -16,7 +16,6 @@ import { getLanguage } from '../../lib/utils';
 import { useListWithFilter } from '../../lib/hooks';
 import { matchesSearchTerm } from '../../lib/searchUtils';
 import { useModulePermission } from '@/hooks/use-module-permission';
-import ModulePermissionDenied from '@/components/shared/ModulePermissionDenied';
 
 type FormOrigin = 'list' | 'detail';
 
@@ -129,14 +128,6 @@ const MoiNgayMotLoiDayBacHoPage: React.FC = () => {
     return (
       <div className="flex flex-col h-page relative items-center justify-center min-h-[40vh]" aria-busy="true">
         <div className="h-10 w-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-      </div>
-    );
-  }
-
-  if (!perm.canView) {
-    return (
-      <div className="flex flex-col h-page relative">
-        <ModulePermissionDenied />
       </div>
     );
   }

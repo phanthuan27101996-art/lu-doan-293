@@ -16,7 +16,6 @@ import { sanitizeHtml, isLikelyHtml } from '../../lib/sanitize-html';
 import { truyenThongFormSchema, type TruyenThongFormValues } from './core/schema';
 import { usePrimaryTruyenThong, useUpsertPrimaryTruyenThong } from './hooks/use-truyen-thong';
 import { useModulePermission } from '@/hooks/use-module-permission';
-import ModulePermissionDenied from '@/components/shared/ModulePermissionDenied';
 import LanhDaoLuuDoanSection from './components/lanh-dao-luu-doan-section';
 import LuuDoanTruongSection from './components/luu-doan-truong-section';
 import ChinhUySection from './components/chinh-uy-section';
@@ -124,28 +123,6 @@ const TruyenThongPage: React.FC = () => {
         <div className="flex flex-col items-center justify-center py-16" aria-busy="true">
           <div className="h-10 w-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
         </div>
-      </div>
-    );
-  }
-
-  if (!perm.canView) {
-    return (
-      <div className="flex flex-col min-h-0">
-        <DashboardToolbar
-          onBack={() => navigate(-1)}
-          leadingContent={
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <ScrollText className="h-4 w-4" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-sm font-semibold text-foreground truncate">{t('nav.module.truyenThong')}</h1>
-                <p className="text-xs text-muted-foreground truncate">{t('truyenThong.subtitle')}</p>
-              </div>
-            </div>
-          }
-        />
-        <ModulePermissionDenied />
       </div>
     );
   }

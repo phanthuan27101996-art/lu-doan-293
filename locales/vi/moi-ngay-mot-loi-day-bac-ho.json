@@ -37,6 +37,8 @@
   "moiNgayMotLoiDayBacHo.dm.detail.nguoiTao": "Người tạo",
   "moiNgayMotLoiDayBacHo.dm.detail.createdAt": "Tạo lúc",
   "moiNgayMotLoiDayBacHo.dm.detail.updatedAt": "Cập nhật",
+  "moiNgayMotLoiDayBacHo.dm.detail.viewImageFull": "Xem ảnh phóng to",
+  "moiNgayMotLoiDayBacHo.dm.detail.imageLightboxTitle": "Xem ảnh",
   "moiNgayMotLoiDayBacHo.dm.toolbar.nam": "Năm",
   "moiNgayMotLoiDayBacHo.dm.deleteConfirmTitle": "Xóa bản ghi?",
   "moiNgayMotLoiDayBacHo.dm.deleteConfirmMessage": "Bạn có chắc muốn xóa",

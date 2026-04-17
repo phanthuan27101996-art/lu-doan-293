@@ -20,7 +20,6 @@ import { useListWithFilter } from '../../lib/hooks';
 import { matchesSearchTerm } from '../../lib/searchUtils';
 import { useExportData } from '../../lib/useExportData';
 import { useModulePermission } from '@/hooks/use-module-permission';
-import ModulePermissionDenied from '@/components/shared/ModulePermissionDenied';
 
 type FormOrigin = 'list' | 'detail';
 
@@ -192,14 +191,6 @@ const TrangTinPage: React.FC = () => {
     );
   }
 
-  if (!perm.canView) {
-    return (
-      <div className="flex flex-col h-page relative">
-        <ModulePermissionDenied />
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-page relative">
       <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden relative z-0">
@@ -212,7 +203,6 @@ const TrangTinPage: React.FC = () => {
             setShowForm(true);
           }}
           onExport={() => {
-            if (!perm.canView) return;
             setShowExport(true);
           }}
           onImport={() => {

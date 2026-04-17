@@ -27,7 +27,6 @@ import { useExportData } from '../../../lib/useExportData';
 import { useModulePermission } from '@/hooks/use-module-permission';
 import { useAuthStore } from '@/store/useStore';
 import { findEmployeeByAuthIdentity } from '@/lib/phone-auth';
-import ModulePermissionDenied from '@/components/shared/ModulePermissionDenied';
 
 type FormOrigin = 'list' | 'detail';
 
@@ -280,14 +279,6 @@ const EmployeePage: React.FC = () => {
     );
   }
 
-  if (!perm.canView) {
-    return (
-      <div className="flex flex-col h-page relative">
-        <ModulePermissionDenied />
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-page relative">
       {/* Tab Switcher – z-0 để luôn nằm dưới overlay (drawer, dialog) */}
@@ -306,7 +297,6 @@ const EmployeePage: React.FC = () => {
               setShowForm(true);
             }}
             onExport={() => {
-              if (!perm.canView) return;
               setShowExport(true);
             }}
             onImport={() => {

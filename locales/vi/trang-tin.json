@@ -49,6 +49,8 @@
   "trangTin.detail.link": "Link ngoài",
   "trangTin.detail.openLink": "Mở link",
   "trangTin.detail.images": "Hình ảnh",
+  "trangTin.detail.viewImageFull": "Xem ảnh {{n}} phóng to",
+  "trangTin.detail.imageLightboxTitle": "Xem ảnh",
   "trangTin.detail.nguoiTao": "Người tạo",
   "trangTin.import.columns.ngay": "ngay_dang",
   "trangTin.import.columns.tieuDe": "tieu_de",

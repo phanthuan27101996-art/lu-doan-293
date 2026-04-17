@@ -37,10 +37,13 @@ export type ModulePermissionState = {
  * - Mock: full CRUD.
  * - `is_admin` (tài khoản): full xem / thêm / sửa / xóa mọi module (kể cả Truyền thống).
  * - Khác: ma trận theo `chuc_vu_id` — `view`|`create`|`update`|`delete` hoặc `quan_tri`|`all` (full module).
+ *
+ * `canView` dùng cho nút/toolbar và ẩn mục trên trang chủ / sidebar — **không** dùng để chặn cả trang module
+ * (đã vào từ menu thì xem nội dung; ma trận + RLS vẫn bảo vệ dữ liệu phía server).
  */
 export function useModulePermission(moduleId: string): ModulePermissionState {
   const user = useAuthStore((s) => s.user);
-  const { data: employees = [] } = useEmployees();
+  const { data: employees = [], isPending: employeesPending } = useEmployees();
   const employee = useMemo(
     () => findEmployeeByAuthIdentity(user, employees) ?? null,
     [user, employees],
@@ -48,7 +51,7 @@ export function useModulePermission(moduleId: string): ModulePermissionState {
   const isAdmin = isPhanQuyenAdmin(employee);
   const mock = !isSupabase();
 
-  const { data: roles = [], isLoading } = useQuery({
+  const { data: roles = [], isPending: rolesPending } = useQuery({
     queryKey: PHAN_QUYEN_ROLES_QUERY_KEY,
     queryFn: getRoles,
     enabled: isSupabase(),
@@ -65,17 +68,11 @@ export function useModulePermission(moduleId: string): ModulePermissionState {
       };
     }
 
-    // is_admin: full CRUD mọi module, không chờ ma trận
-    if (isAdmin) {
-      return {
-        ...FULL,
-        isLoading: false,
-        isAdmin: true,
-        noPosition: false,
-      };
-    }
-
-    if (isLoading) {
+    /**
+     * Chờ cả ma trận và DS quân nhân: nếu chỉ roles xong mà employees chưa có,
+     * `employee` vẫn null → tưởng nhầm không có quyền (nháy "không được phép").
+     */
+    if (rolesPending || employeesPending) {
       return {
         canView: false,
         canCreate: false,
@@ -83,6 +80,16 @@ export function useModulePermission(moduleId: string): ModulePermissionState {
         canDelete: false,
         isLoading: true,
         isAdmin: false,
+        noPosition: false,
+      };
+    }
+
+    // is_admin: full CRUD mọi module (đã có employee từ DS)
+    if (isAdmin) {
+      return {
+        ...FULL,
+        isLoading: false,
+        isAdmin: true,
         noPosition: false,
       };
     }
@@ -107,5 +114,5 @@ export function useModulePermission(moduleId: string): ModulePermissionState {
       isAdmin: false,
       noPosition: false,
     };
-  }, [mock, isAdmin, isLoading, roles, employee?.chuc_vu_id, moduleId]);
+  }, [mock, isAdmin, rolesPending, employeesPending, roles, employee?.chuc_vu_id, moduleId]);
 }
