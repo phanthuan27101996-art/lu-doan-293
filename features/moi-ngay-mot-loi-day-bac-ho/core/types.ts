@@ -9,6 +9,7 @@ export interface MoiNgayMotLoiDayBacHo {
   ten_tai_lieu: string;
   hinh_anh: string | null;
   tep_dinh_kem: string | null;
+  link: string | null;
   id_nguoi_tao: string | null;
   ten_nguoi_tao?: string;
   tg_tao: string | null;
@@ -16,6 +17,6 @@ export interface MoiNgayMotLoiDayBacHo {
 }
 
 export interface MoiNgayMotLoiDayBacHoFilters {
-  /** Năm dạng '2025' lấy từ ngay (YYYY-MM-DD) */
-  nam: string[];
+  /** Kỳ tháng `yyyy/mm` (suy từ `ngay`) — giống mô-đun mỗi tuần */
+  nam_thang: string[];
 }

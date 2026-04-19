@@ -28,14 +28,25 @@ import {
   resolveHinhAnhForSave,
   uploadMoiNgayMotLoiDayBacHoAttachment,
 } from '../services/moi-ngay-mot-loi-day-bac-ho-service';
+import { parseNamThangKey } from '../utils/ngay-nam-thang';
 
 interface Props {
   initialData?: MoiNgayMotLoiDayBacHo | null;
   existingItems: MoiNgayMotLoiDayBacHo[];
+  /** Khi tạo mới: gán kỳ yyyy/mm từ drill (danh sách theo tháng) */
+  defaultNamThang?: string | null;
+  /** Khi tạo mới từ màn chọn tháng: chỉ gán năm (mặc định ngày 01/01) */
+  defaultNam?: number | null;
   onClose: () => void;
 }
 
-const MoiNgayMotLoiDayBacHoForm: React.FC<Props> = ({ initialData, existingItems, onClose }) => {
+const MoiNgayMotLoiDayBacHoForm: React.FC<Props> = ({
+  initialData,
+  existingItems,
+  defaultNamThang,
+  defaultNam,
+  onClose,
+}) => {
   const { t } = useTranslation();
   const isEdit = !!initialData;
   const createMutation = useCreateMoiNgayMotLoiDayBacHo(onClose);
@@ -77,6 +88,23 @@ const MoiNgayMotLoiDayBacHoForm: React.FC<Props> = ({ initialData, existingItems
       setValue('id_nguoi_tao', '', { shouldValidate: true });
     }
   }, [initialData, currentQuanNhanId, setValue]);
+
+  useEffect(() => {
+    if (initialData) return;
+    const p = defaultNamThang ? parseNamThangKey(defaultNamThang) : null;
+    if (p) {
+      const mm = String(p.thang).padStart(2, '0');
+      setValue('ngay', `${p.nam}-${mm}-01`, { shouldValidate: true });
+    }
+  }, [initialData, defaultNamThang, setValue]);
+
+  useEffect(() => {
+    if (initialData) return;
+    if (defaultNamThang) return;
+    if (defaultNam != null) {
+      setValue('ngay', `${defaultNam}-01-01`, { shouldValidate: true });
+    }
+  }, [initialData, defaultNam, defaultNamThang, setValue]);
 
   const onSubmit = async (data: MoiNgayMotLoiDayBacHoFormValues) => {
     const dup = existingItems.find((r) => r.ngay === data.ngay.trim() && (!initialData || r.id !== initialData.id));
@@ -199,6 +227,12 @@ const MoiNgayMotLoiDayBacHoForm: React.FC<Props> = ({ initialData, existingItems
               error={errors.tep_dinh_kem?.message}
             />
             <input type="hidden" {...register('tep_dinh_kem')} />
+            <Input
+              label={t('moiNgayMotLoiDayBacHo.dm.form.link')}
+              placeholder={t('moiNgayMotLoiDayBacHo.dm.form.linkPlaceholder')}
+              {...register('link')}
+              error={errors.link?.message}
+            />
             <input type="hidden" {...register('id_nguoi_tao')} />
           </FormGrid>
         </FormSection>

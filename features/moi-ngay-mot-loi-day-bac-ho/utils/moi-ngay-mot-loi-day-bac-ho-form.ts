@@ -8,6 +8,7 @@ export function getDefaultMoiNgayMotLoiDayBacHoFormValues(todayIso: string): Moi
     ten_tai_lieu: '',
     hinh_anh: '',
     tep_dinh_kem: '',
+    link: '',
     id_nguoi_tao: '',
   };
 }
@@ -18,6 +19,7 @@ export function moiNgayMotLoiDayBacHoToFormValues(t: MoiNgayMotLoiDayBacHo): Moi
     ten_tai_lieu: t.ten_tai_lieu,
     hinh_anh: t.hinh_anh ?? '',
     tep_dinh_kem: t.tep_dinh_kem ?? '',
+    link: t.link ?? '',
     id_nguoi_tao: t.id_nguoi_tao ?? '',
   };
 }

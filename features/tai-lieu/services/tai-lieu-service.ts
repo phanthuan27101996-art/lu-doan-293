@@ -4,10 +4,12 @@ import { createRepository } from '@/lib/data/create-repository';
 import { isSupabase } from '@/lib/data/config';
 import i18n from '@/lib/i18n';
 import { getEmployees } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
+import { getPositions } from '@/features/he-thong/chuc-vu/services/chuc-vu-service';
 
 const MOCK_SEED: TaiLieu[] = [
   {
     id: '1',
+    id_chuc_vu: '1',
     nhom_tai_lieu: 'Hướng dẫn nội bộ',
     ten_tai_lieu: 'Quy chế làm việc (mẫu)',
     link: 'https://example.com/quy-che-293',
@@ -19,6 +21,7 @@ const MOCK_SEED: TaiLieu[] = [
   },
   {
     id: '2',
+    id_chuc_vu: '1',
     nhom_tai_lieu: 'Tuyên truyền',
     ten_tai_lieu: 'Mẫu slide giới thiệu đơn vị',
     link: null,
@@ -30,6 +33,7 @@ const MOCK_SEED: TaiLieu[] = [
   },
   {
     id: '3',
+    id_chuc_vu: '1',
     nhom_tai_lieu: 'Hướng dẫn nội bộ',
     ten_tai_lieu: 'Danh mục biểu mẫu hành chính',
     link: 'https://example.com/bieu-mau',
@@ -49,8 +53,10 @@ const repo = createRepository<TaiLieu>({
 });
 
 function flattenRow(row: Record<string, unknown>): TaiLieu {
+  const idCv = row.id_chuc_vu;
   return {
     id: String(row.id ?? ''),
+    id_chuc_vu: idCv != null && String(idCv).trim() !== '' ? String(idCv) : '',
     nhom_tai_lieu: (row.nhom_tai_lieu as string) ?? '',
     ten_tai_lieu: (row.ten_tai_lieu as string) ?? '',
     link: row.link != null && String(row.link).trim() !== '' ? String(row.link) : null,
@@ -64,6 +70,7 @@ function flattenRow(row: Record<string, unknown>): TaiLieu {
 
 function toDbPayload(data: TaiLieuFormValues): Record<string, unknown> {
   return {
+    id_chuc_vu: data.id_chuc_vu.trim(),
     nhom_tai_lieu: data.nhom_tai_lieu.trim(),
     ten_tai_lieu: data.ten_tai_lieu.trim(),
     link: data.link?.trim() ? data.link.trim() : null,
@@ -84,6 +91,23 @@ async function enrichTenNguoiTao(items: TaiLieu[]): Promise<TaiLieu[]> {
   }));
 }
 
+async function enrichTenChucVu(items: TaiLieu[]): Promise<TaiLieu[]> {
+  if (items.length === 0) return items;
+  const needCv = new Set(items.map((i) => i.id_chuc_vu).filter(Boolean) as string[]);
+  if (needCv.size === 0) return items;
+  const positions = await getPositions();
+  const map = new Map(positions.map((p) => [p.id, p.ten_chuc_vu]));
+  return items.map((row) => ({
+    ...row,
+    ten_chuc_vu: row.id_chuc_vu ? map.get(row.id_chuc_vu) ?? row.ten_chuc_vu : row.ten_chuc_vu,
+  }));
+}
+
+async function enrichTaiLieuDisplay(items: TaiLieu[]): Promise<TaiLieu[]> {
+  const withCreators = await enrichTenNguoiTao(items);
+  return enrichTenChucVu(withCreators);
+}
+
 export const getTaiLieuList = async (): Promise<TaiLieu[]> => {
   const list = await repo.getAll(
     isSupabase() ? { orderBy: 'tg_cap_nhat', ascending: false } : { orderBy: 'tg_cap_nhat', ascending: false },
@@ -91,14 +115,14 @@ export const getTaiLieuList = async (): Promise<TaiLieu[]> => {
   const rows = isSupabase()
     ? (list as unknown as Record<string, unknown>[]).map(flattenRow)
     : (list as TaiLieu[]);
-  return enrichTenNguoiTao(rows);
+  return enrichTaiLieuDisplay(rows);
 };
 
 export const getTaiLieuById = async (id: string): Promise<TaiLieu | undefined> => {
   const row = await repo.getById(id);
   if (!row) return undefined;
   const flat = isSupabase() ? flattenRow(row as unknown as Record<string, unknown>) : (row as TaiLieu);
-  const [out] = await enrichTenNguoiTao([flat]);
+  const [out] = await enrichTaiLieuDisplay([flat]);
   return out;
 };
 
@@ -107,7 +131,7 @@ export const createTaiLieu = async (data: TaiLieuFormValues): Promise<TaiLieu> =
   if (isSupabase()) {
     const inserted = await repo.insert(payload as Omit<TaiLieu, 'id'> & { id?: string });
     const flat = flattenRow(inserted as unknown as Record<string, unknown>);
-    const [out] = await enrichTenNguoiTao([flat]);
+    const [out] = await enrichTaiLieuDisplay([flat]);
     return out!;
   }
   const inserted = await repo.insert({
@@ -115,7 +139,7 @@ export const createTaiLieu = async (data: TaiLieuFormValues): Promise<TaiLieu> =
     tg_tao: new Date().toISOString(),
     tg_cap_nhat: new Date().toISOString(),
   } as Omit<TaiLieu, 'id'> & { id?: string });
-  const [out] = await enrichTenNguoiTao([inserted as TaiLieu]);
+  const [out] = await enrichTaiLieuDisplay([inserted as TaiLieu]);
   return out!;
 };
 
@@ -126,14 +150,14 @@ export const updateTaiLieu = async (id: string, data: TaiLieuFormValues): Promis
   if (isSupabase()) {
     const updated = await repo.update(id, payload as Partial<TaiLieu>);
     const flat = flattenRow(updated as unknown as Record<string, unknown>);
-    const [out] = await enrichTenNguoiTao([flat]);
+    const [out] = await enrichTaiLieuDisplay([flat]);
     return out!;
   }
   const updated = await repo.update(id, {
     ...payload,
     tg_cap_nhat: new Date().toISOString(),
   } as Partial<TaiLieu>);
-  const [out] = await enrichTenNguoiTao([updated as TaiLieu]);
+  const [out] = await enrichTaiLieuDisplay([updated as TaiLieu]);
   return out!;
 };
 

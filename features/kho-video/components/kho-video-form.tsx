@@ -21,10 +21,11 @@ import { resolveQuanNhanIdForUser } from '@/lib/resolve-quan-nhan-for-auth-user'
 interface Props {
   initialData?: KhoVideo | null;
   existingItems: KhoVideo[];
+  defaultBoSuuTap?: string;
   onClose: () => void;
 }
 
-const KhoVideoForm: React.FC<Props> = ({ initialData, existingItems, onClose }) => {
+const KhoVideoForm: React.FC<Props> = ({ initialData, existingItems, defaultBoSuuTap, onClose }) => {
   const { t } = useTranslation();
   const isEdit = !!initialData;
   const createMutation = useCreateKhoVideo(onClose);
@@ -69,6 +70,13 @@ const KhoVideoForm: React.FC<Props> = ({ initialData, existingItems, onClose }) 
       setValue('id_nguoi_tao', '', { shouldValidate: true });
     }
   }, [initialData, currentQuanNhanId, setValue]);
+
+  useEffect(() => {
+    if (initialData) return;
+    if (defaultBoSuuTap) {
+      setValue('bo_suu_tap', defaultBoSuuTap, { shouldValidate: true });
+    }
+  }, [initialData, defaultBoSuuTap, setValue]);
 
   const onSubmit = async (data: KhoVideoFormValues) => {
     const creatorId = isEdit

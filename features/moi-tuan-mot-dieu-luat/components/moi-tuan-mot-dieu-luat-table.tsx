@@ -218,6 +218,7 @@ const MoiTuanMotDieuLuatTable: React.FC<Props> = ({
               aria-label={t('common.select')}
             />
           </div>
+          <p className="text-xs font-mono text-muted-foreground tabular-nums">{item.nam_thang_tuan?.trim() || '—'}</p>
           <p className="text-xs text-muted-foreground leading-relaxed">
             <span className="text-foreground/90">{item.ten_nguoi_tao ?? '—'}</span>
             <span className="mx-1.5 text-border select-none" aria-hidden>
@@ -278,7 +279,6 @@ const MoiTuanMotDieuLuatTable: React.FC<Props> = ({
       onSort={setSort}
       renderCell={renderCell}
       renderMobileCard={renderDieuLuatCard}
-      renderDesktopCard={renderDieuLuatCard}
       onRowClick={onView}
       keyExtractor={(item) => item.id}
       onResizeColumn={resizeColumn}

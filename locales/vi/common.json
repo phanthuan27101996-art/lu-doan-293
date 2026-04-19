@@ -76,6 +76,8 @@
   "common.actions": "Thao tác",
   "common.description": "Mô tả",
   "common.all": "Tất cả",
+  "common.browseViewAll": "Xem tất cả",
+  "common.browseViewAllCount": "{{count}} mục",
   "common.perPage": "/ trang",
   "common.apply": "Áp dụng",
   "common.reset": "Khôi phục mặc định",

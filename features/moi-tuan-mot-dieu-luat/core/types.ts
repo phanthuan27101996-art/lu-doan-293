@@ -24,6 +24,6 @@ export interface MoiTuanMotDieuLuat {
 }
 
 export interface MoiTuanMotDieuLuatFilters {
-  /** Năm dạng chuỗi '2025' để khớp FilterChip */
-  nam: string[];
+  /** Kỳ tháng `yyyy/mm` (theo `nam_thang`) — một cấp lọc */
+  nam_thang: string[];
 }

@@ -11,6 +11,11 @@ import type { TaiLieu } from '../core/types';
 
 interface Props {
   items: TaiLieu[];
+  /** Nguồn để tính mục lọc nhóm (mặc định = items); khi drill theo chức vụ nên thu hẹp theo scope */
+  itemsForNhomFilter?: TaiLieu[];
+  /** Khi duyệt theo cấp: ẩn tìm kiếm / bộ lọc nhóm; nút Back gọi onBrowseBack */
+  browseStep?: 'chuc_vu' | 'nhom' | 'list';
+  onBrowseBack?: () => void;
   onAdd: () => void;
   onExport: () => void;
   onImport: () => void;
@@ -23,6 +28,9 @@ interface Props {
 
 const TaiLieuToolbar: React.FC<Props> = ({
   items,
+  itemsForNhomFilter,
+  browseStep = 'list',
+  onBrowseBack,
   onAdd,
   onExport,
   onImport,
@@ -46,9 +54,11 @@ const TaiLieuToolbar: React.FC<Props> = ({
     clearSelection,
   } = useTaiLieuStore();
 
+  const nhomScope = itemsForNhomFilter ?? items;
+
   const nhomOptions = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const row of items) {
+    for (const row of nhomScope) {
       const key = (row.nhom_tai_lieu ?? '').trim() || '__empty__';
       counts[key] = (counts[key] ?? 0) + 1;
     }
@@ -59,11 +69,16 @@ const TaiLieuToolbar: React.FC<Props> = ({
         value,
         count: counts[value] ?? 0,
       }));
-  }, [items, t]);
+  }, [nhomScope, t]);
+
+  /** Chỉ khi đã có bản ghi mới dùng luồng duyệt chức vụ → nhóm → danh sách */
+  const drillActive = items.length > 0;
+  const atListBrowse = !drillActive || browseStep === 'list';
 
   const activeFilterCount = useMemo(
-    () => (searchTerm ? 1 : 0) + (filters.nhom_tai_lieu.length > 0 ? 1 : 0),
-    [searchTerm, filters.nhom_tai_lieu.length],
+    () =>
+      atListBrowse ? (searchTerm ? 1 : 0) + (filters.nhom_tai_lieu.length > 0 ? 1 : 0) : 0,
+    [atListBrowse, searchTerm, filters.nhom_tai_lieu.length],
   );
 
   const handleClearAllFilters = () => {
@@ -71,7 +86,7 @@ const TaiLieuToolbar: React.FC<Props> = ({
     setFilter('nhom_tai_lieu', []);
   };
 
-  const renderFilters = (
+  const renderFilters = atListBrowse ? (
     <FilterChipMultiSelect
       options={nhomOptions}
       value={filters.nhom_tai_lieu}
@@ -80,20 +95,23 @@ const TaiLieuToolbar: React.FC<Props> = ({
       placeholder={t('taiLieu.dm.toolbar.nhom')}
       className="w-full sm:w-[220px]"
     />
-  );
+  ) : null;
 
   const filterGroups = useMemo(
-    () => [
-      {
-        key: 'nhom_tai_lieu',
-        label: t('taiLieu.dm.toolbar.nhom'),
-        icon: FolderOpen,
-        options: nhomOptions,
-        value: filters.nhom_tai_lieu,
-        onChange: (val: string[]) => setFilter('nhom_tai_lieu', val),
-      },
-    ],
-    [nhomOptions, filters.nhom_tai_lieu, setFilter, t],
+    () =>
+      atListBrowse
+        ? [
+            {
+              key: 'nhom_tai_lieu',
+              label: t('taiLieu.dm.toolbar.nhom'),
+              icon: FolderOpen,
+              options: nhomOptions,
+              value: filters.nhom_tai_lieu,
+              onChange: (val: string[]) => setFilter('nhom_tai_lieu', val),
+            },
+          ]
+        : [],
+    [atListBrowse, nhomOptions, filters.nhom_tai_lieu, setFilter, t],
   );
 
   const mobileActions = useMemo(() => {
@@ -163,6 +181,9 @@ const TaiLieuToolbar: React.FC<Props> = ({
       actions={renderActions}
       filters={renderFilters}
       filterGroups={filterGroups}
+      showBack={drillActive}
+      onBack={drillActive ? onBrowseBack : undefined}
+      hideSearch={!atListBrowse}
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       onDeleteMany={canDelete ? () => onDeleteMany(Array.from(selectedIds)) : undefined}
@@ -170,7 +191,6 @@ const TaiLieuToolbar: React.FC<Props> = ({
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
-      showBack
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
     />

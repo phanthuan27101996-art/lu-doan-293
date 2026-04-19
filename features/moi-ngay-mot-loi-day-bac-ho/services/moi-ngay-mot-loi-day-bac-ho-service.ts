@@ -15,6 +15,7 @@ const MOCK_SEED: MoiNgayMotLoiDayBacHo[] = [
     ten_tai_lieu: '“Trí tuệ và sáng kiến của quần chúng là vô cùng tận”.',
     hinh_anh: null,
     tep_dinh_kem: null,
+    link: null,
     id_nguoi_tao: null,
     ten_nguoi_tao: undefined,
     tg_tao: '2025-04-01T08:00:00.000Z',
@@ -27,6 +28,7 @@ const MOCK_SEED: MoiNgayMotLoiDayBacHo[] = [
       '"Thi đua là yêu nước, yêu nước thì phải thi đua. Và những người thi đua là những người yêu nước nhất"',
     hinh_anh: null,
     tep_dinh_kem: null,
+    link: null,
     id_nguoi_tao: null,
     ten_nguoi_tao: undefined,
     tg_tao: '2025-05-01T08:00:00.000Z',
@@ -62,6 +64,7 @@ function flattenRow(row: Record<string, unknown>): MoiNgayMotLoiDayBacHo {
       row.tep_dinh_kem != null && String(row.tep_dinh_kem).trim() !== ''
         ? String(row.tep_dinh_kem)
         : null,
+    link: row.link != null && String(row.link).trim() !== '' ? String(row.link) : null,
     id_nguoi_tao:
       row.id_nguoi_tao != null && row.id_nguoi_tao !== ''
         ? String(row.id_nguoi_tao as string | number)
@@ -77,6 +80,7 @@ function toDbPayload(data: MoiNgayMotLoiDayBacHoFormValues): Record<string, unkn
     ten_tai_lieu: data.ten_tai_lieu.trim(),
     hinh_anh: data.hinh_anh?.trim() ? data.hinh_anh.trim() : null,
     tep_dinh_kem: data.tep_dinh_kem?.trim() ? data.tep_dinh_kem.trim() : null,
+    link: data.link?.trim() ? data.link.trim() : null,
     id_nguoi_tao: data.id_nguoi_tao?.trim() ? data.id_nguoi_tao.trim() : null,
   };
 }

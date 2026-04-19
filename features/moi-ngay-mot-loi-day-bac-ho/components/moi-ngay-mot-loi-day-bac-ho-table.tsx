@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, Quote, Paperclip, ImageIcon } from 'lucide-react';
+import { Edit, Trash2, Quote, Paperclip, ImageIcon, Link2 } from 'lucide-react';
 import type { MoiNgayMotLoiDayBacHo } from '../core/types';
 import { useMoiNgayMotLoiDayBacHoStore } from '../store/useMoiNgayMotLoiDayBacHoStore';
 import { cn, formatDate } from '../../../lib/utils';
@@ -99,6 +99,21 @@ const MoiNgayMotLoiDayBacHoTable: React.FC<Props> = ({
           >
             <Paperclip size={12} className="shrink-0" aria-hidden />
             <span className="truncate">{t('moiNgayMotLoiDayBacHo.dm.table.openFile')}</span>
+          </a>
+        ) : (
+          <span className="text-xs text-muted-foreground italic">—</span>
+        );
+      case 'link':
+        return item.link ? (
+          <a
+            href={item.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-primary hover:underline truncate max-w-[200px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Link2 size={12} className="shrink-0" aria-hidden />
+            <span className="truncate">{item.link}</span>
           </a>
         ) : (
           <span className="text-xs text-muted-foreground italic">—</span>
@@ -263,7 +278,6 @@ const MoiNgayMotLoiDayBacHoTable: React.FC<Props> = ({
       onSort={setSort}
       renderCell={renderCell}
       renderMobileCard={renderLoiDayCard}
-      renderDesktopCard={renderLoiDayCard}
       onRowClick={onView}
       keyExtractor={(item) => item.id}
       onResizeColumn={resizeColumn}

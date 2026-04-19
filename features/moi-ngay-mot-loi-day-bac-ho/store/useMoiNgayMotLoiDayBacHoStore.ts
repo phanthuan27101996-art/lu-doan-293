@@ -36,12 +36,20 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
     order: 3,
   },
   {
+    id: 'link',
+    label: i18n.t('moiNgayMotLoiDayBacHo.dm.store.linkCol'),
+    visible: false,
+    minWidth: 120,
+    maxWidth: 220,
+    order: 4,
+  },
+  {
     id: 'ten_nguoi_tao',
     label: i18n.t('moiNgayMotLoiDayBacHo.dm.store.nguoiTaoCol'),
     visible: true,
     minWidth: 130,
     maxWidth: 200,
-    order: 4,
+    order: 5,
   },
   {
     id: 'tg_cap_nhat',
@@ -49,12 +57,12 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
     visible: false,
     minWidth: 110,
     maxWidth: 140,
-    order: 5,
+    order: 6,
   },
 ];
 
 const initialFilters: MoiNgayMotLoiDayBacHoFilters = {
-  nam: [],
+  nam_thang: [],
 };
 
 export const useMoiNgayMotLoiDayBacHoStore = createGenericStore<MoiNgayMotLoiDayBacHoFilters>(

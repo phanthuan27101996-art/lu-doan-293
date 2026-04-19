@@ -38,6 +38,7 @@
   "khoNhac.dm.detail.nguoiTao": "Người tạo",
   "khoNhac.dm.detail.createdAt": "Tạo lúc",
   "khoNhac.dm.detail.updatedAt": "Cập nhật",
+  "khoNhac.dm.browse.recordCount": "{{count}} bản ghi",
   "khoNhac.dm.toolbar.boSuuTap": "Bộ sưu tập",
   "khoNhac.dm.toolbar.boSuuTapEmpty": "(Chưa có)",
   "khoNhac.dm.toolbar.importData": "Nhập dữ liệu",

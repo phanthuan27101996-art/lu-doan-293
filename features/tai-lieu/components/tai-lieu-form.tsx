@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useId } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
-import { FileText } from 'lucide-react';
+import { FileText, Briefcase } from 'lucide-react';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
+import Select from '../../../components/ui/Select';
 import Textarea from '../../../components/ui/Textarea';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../components/shared/GenericDrawer';
 import FormSection from '../../../components/shared/FormSection';
@@ -15,22 +16,26 @@ import type { TaiLieu } from '../core/types';
 import { getDefaultTaiLieuFormValues, taiLieuToFormValues } from '../utils/tai-lieu-form';
 import { useCreateTaiLieu, useUpdateTaiLieu } from '../hooks/use-tai-lieu';
 import { useEmployees } from '../../he-thong/nhan-vien/hooks/use-nhan-vien';
+import { usePositions } from '../../he-thong/chuc-vu/hooks/use-chuc-vu';
 import { useAuthStore } from '../../../store/useStore';
 import { resolveQuanNhanIdForUser } from '@/lib/resolve-quan-nhan-for-auth-user';
 
 interface Props {
   initialData?: TaiLieu | null;
-  /** Các bản ghi hiện có — dùng để gợi ý nhóm (datalist) theo giá trị đã có trong bảng */
+  /** Các bản ghi hiện có — dùng để gợi ý nhóm (datalist) theo chức vụ + giá trị đã có trong bảng */
   existingItems: TaiLieu[];
+  /** Khi tạo mới: mặc định chức vụ (vd. từ màn đang duyệt) */
+  defaultIdChucVu?: string | null;
   onClose: () => void;
 }
 
-const TaiLieuForm: React.FC<Props> = ({ initialData, existingItems, onClose }) => {
+const TaiLieuForm: React.FC<Props> = ({ initialData, existingItems, defaultIdChucVu, onClose }) => {
   const { t } = useTranslation();
   const isEdit = !!initialData;
   const createMutation = useCreateTaiLieu(onClose);
   const updateMutation = useUpdateTaiLieu(onClose);
   const { data: employees = [] } = useEmployees();
+  const { data: positions = [] } = usePositions();
   const authUser = useAuthStore((s) => s.user);
 
   const currentQuanNhanId = useMemo(
@@ -40,19 +45,27 @@ const TaiLieuForm: React.FC<Props> = ({ initialData, existingItems, onClose }) =
 
   const nhomDatalistId = useId();
 
+  const positionOptions = useMemo(
+    () => positions.map((p) => ({ value: p.id, label: p.ten_chuc_vu })),
+    [positions],
+  );
+
+  const { register, handleSubmit, control, watch, formState: { errors }, reset, setValue } = useForm<TaiLieuFormValues>({
+    resolver: zodResolver(taiLieuFormSchema),
+    defaultValues: getDefaultTaiLieuFormValues(),
+  });
+
+  const idChucVuWatch = watch('id_chuc_vu');
+
   const nhomSuggestions = useMemo(() => {
     const set = new Set<string>();
     for (const row of existingItems) {
+      if (String(row.id_chuc_vu) !== String(idChucVuWatch)) continue;
       const v = (row.nhom_tai_lieu ?? '').trim();
       if (v) set.add(v);
     }
     return [...set].sort((a, b) => a.localeCompare(b, 'vi'));
-  }, [existingItems]);
-
-  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<TaiLieuFormValues>({
-    resolver: zodResolver(taiLieuFormSchema),
-    defaultValues: getDefaultTaiLieuFormValues(),
-  });
+  }, [existingItems, idChucVuWatch]);
 
   useEffect(() => {
     if (initialData) {
@@ -61,6 +74,13 @@ const TaiLieuForm: React.FC<Props> = ({ initialData, existingItems, onClose }) =
       reset(getDefaultTaiLieuFormValues());
     }
   }, [initialData, reset]);
+
+  useEffect(() => {
+    if (initialData) return;
+    if (defaultIdChucVu) {
+      setValue('id_chuc_vu', defaultIdChucVu, { shouldValidate: true });
+    }
+  }, [initialData, defaultIdChucVu, setValue]);
 
   useEffect(() => {
     if (initialData) return;
@@ -115,6 +135,28 @@ const TaiLieuForm: React.FC<Props> = ({ initialData, existingItems, onClose }) =
 
         <FormSection title={t('taiLieu.dm.form.basicInfo')} icon={<FileText size={14} />} variant="primary">
           <FormGrid cols={1}>
+            <Controller
+              name="id_chuc_vu"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  label={t('taiLieu.dm.form.chucVu')}
+                  placeholder={t('taiLieu.dm.form.chucVuPlaceholder')}
+                  required
+                  icon={<Briefcase size={16} />}
+                  options={positionOptions}
+                  ref={field.ref}
+                  value={field.value}
+                  onChange={(e) => {
+                    field.onChange(e.target.value);
+                    setValue('nhom_tai_lieu', '', { shouldValidate: true });
+                  }}
+                  onBlur={field.onBlur}
+                  name={field.name}
+                  error={errors.id_chuc_vu?.message}
+                />
+              )}
+            />
             <div className="space-y-1">
               <Input
                 label={t('taiLieu.dm.form.nhomTaiLieu')}
@@ -133,7 +175,7 @@ const TaiLieuForm: React.FC<Props> = ({ initialData, existingItems, onClose }) =
                 </datalist>
               )}
               {nhomSuggestions.length > 0 && (
-                <p className="text-xs text-muted-foreground px-0.5">{t('taiLieu.dm.form.nhomTaiLieuHint')}</p>
+                <p className="text-xs text-muted-foreground px-0.5">{t('taiLieu.dm.form.nhomTaiLieuHintByChucVu')}</p>
               )}
             </div>
             <Input

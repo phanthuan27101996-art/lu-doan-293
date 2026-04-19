@@ -36,6 +36,7 @@
   "khoVideo.dm.detail.createdAt": "Tạo lúc",
   "khoVideo.dm.detail.updatedAt": "Cập nhật",
   "khoVideo.dm.detail.embedPlayer": "Phát video",
+  "khoVideo.dm.browse.recordCount": "{{count}} bản ghi",
   "khoVideo.dm.toolbar.boSuuTap": "Bộ sưu tập",
   "khoVideo.dm.toolbar.boSuuTapEmpty": "(Chưa có)",
   "khoVideo.dm.toolbar.importData": "Nhập dữ liệu",

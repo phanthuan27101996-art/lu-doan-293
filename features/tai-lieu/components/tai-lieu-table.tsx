@@ -41,6 +41,12 @@ const TaiLieuTable: React.FC<Props> = ({
 
   const renderCell = (colId: string, item: TaiLieu) => {
     switch (colId) {
+      case 'ten_chuc_vu':
+        return (
+          <span className="text-body-sm font-medium text-foreground truncate block max-w-[200px]">
+            {item.ten_chuc_vu?.trim() || '—'}
+          </span>
+        );
       case 'nhom_tai_lieu':
         return (
           <span className="text-body-sm font-medium text-foreground truncate block max-w-[180px]">

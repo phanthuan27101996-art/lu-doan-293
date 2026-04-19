@@ -4,6 +4,10 @@
 
 export interface TaiLieu {
   id: string;
+  /** FK → chuc_vu.id */
+  id_chuc_vu: string;
+  /** Tên chức vụ (join từ chuc_vu, hiển thị UI) */
+  ten_chuc_vu?: string;
   nhom_tai_lieu: string;
   ten_tai_lieu: string;
   link: string | null;

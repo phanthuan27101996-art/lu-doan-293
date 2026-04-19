@@ -18,6 +18,7 @@ import type { MoiTuanMotDieuLuat } from '../core/types';
 import {
   getDefaultMoiTuanMotDieuLuatFormValues,
   moiTuanMotDieuLuatToFormValues,
+  parseNamThangKey,
 } from '../utils/moi-tuan-mot-dieu-luat-form';
 import { useCreateMoiTuanMotDieuLuat, useUpdateMoiTuanMotDieuLuat } from '../hooks/use-moi-tuan-mot-dieu-luat';
 import { useEmployees } from '../../he-thong/nhan-vien/hooks/use-nhan-vien';
@@ -28,10 +29,20 @@ import { resolveHinhAnhForSave, uploadMoiTuanMotDieuLuatAttachment } from '../se
 interface Props {
   initialData?: MoiTuanMotDieuLuat | null;
   existingItems: MoiTuanMotDieuLuat[];
+  /** Khi tạo mới: gán năm/tháng từ kỳ yyyy/mm đang chọn sau drill (danh sách) */
+  defaultNamThang?: string | null;
+  /** Khi tạo mới từ màn chọn tháng: chỉ gán năm */
+  defaultNam?: number | null;
   onClose: () => void;
 }
 
-const MoiTuanMotDieuLuatForm: React.FC<Props> = ({ initialData, existingItems, onClose }) => {
+const MoiTuanMotDieuLuatForm: React.FC<Props> = ({
+  initialData,
+  existingItems,
+  defaultNamThang,
+  defaultNam,
+  onClose,
+}) => {
   const { t } = useTranslation();
   const isEdit = !!initialData;
   const createMutation = useCreateMoiTuanMotDieuLuat(onClose);
@@ -73,6 +84,23 @@ const MoiTuanMotDieuLuatForm: React.FC<Props> = ({ initialData, existingItems, o
       setValue('id_nguoi_tao', '', { shouldValidate: true });
     }
   }, [initialData, currentQuanNhanId, setValue]);
+
+  useEffect(() => {
+    if (initialData) return;
+    const p = defaultNamThang ? parseNamThangKey(defaultNamThang) : null;
+    if (p) {
+      setValue('nam', p.nam, { shouldValidate: true });
+      setValue('thang', p.thang, { shouldValidate: true });
+    }
+  }, [initialData, defaultNamThang, setValue]);
+
+  useEffect(() => {
+    if (initialData) return;
+    if (defaultNamThang) return;
+    if (defaultNam != null) {
+      setValue('nam', defaultNam, { shouldValidate: true });
+    }
+  }, [initialData, defaultNam, defaultNamThang, setValue]);
 
   const onSubmit = async (data: MoiTuanMotDieuLuatFormValues) => {
     const dup = existingItems.find(

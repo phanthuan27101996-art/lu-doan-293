@@ -7,9 +7,15 @@ import GenericToolbar from '../../../components/shared/GenericToolbar';
 import { BTN_ADD } from '../../../lib/button-labels';
 import FilterChipMultiSelect from '../../../components/shared/FilterChipMultiSelect';
 import type { MoiNgayMotLoiDayBacHo } from '../core/types';
+import { ngayISOToNamThangKey } from '../utils/ngay-nam-thang';
+
+export type MoiNgayBrowseStep = 'nam' | 'thang' | 'list';
 
 interface Props {
   items: MoiNgayMotLoiDayBacHo[];
+  itemsForNamThangFilter?: MoiNgayMotLoiDayBacHo[];
+  browseStep?: MoiNgayBrowseStep;
+  onBrowseBack?: () => void;
   onAdd: () => void;
   onDeleteMany: (ids: string[]) => void;
   canCreate?: boolean;
@@ -18,6 +24,9 @@ interface Props {
 
 const MoiNgayMotLoiDayBacHoToolbar: React.FC<Props> = ({
   items,
+  itemsForNamThangFilter,
+  browseStep = 'list',
+  onBrowseBack,
   onAdd,
   onDeleteMany,
   canCreate = true,
@@ -37,55 +46,64 @@ const MoiNgayMotLoiDayBacHoToolbar: React.FC<Props> = ({
     clearSelection,
   } = useMoiNgayMotLoiDayBacHoStore();
 
-  const namOptions = useMemo(() => {
+  const namThangScope = itemsForNamThangFilter ?? items;
+
+  const namThangOptions = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const row of items) {
-      const y = (row.ngay ?? '').slice(0, 4);
-      if (!y || y.length !== 4) continue;
-      counts[y] = (counts[y] ?? 0) + 1;
+    for (const row of namThangScope) {
+      const key = ngayISOToNamThangKey(row.ngay ?? '');
+      if (!key) continue;
+      counts[key] = (counts[key] ?? 0) + 1;
     }
     return Object.keys(counts)
-      .sort((a, b) => Number(b) - Number(a))
+      .sort((a, b) => b.localeCompare(a, 'vi'))
       .map((value) => ({
         label: value,
         value,
         count: counts[value] ?? 0,
       }));
-  }, [items]);
+  }, [namThangScope]);
+
+  const drillActive = items.length > 0;
+  const atListBrowse = !drillActive || browseStep === 'list';
 
   const activeFilterCount = useMemo(
-    () => (searchTerm ? 1 : 0) + (filters.nam.length > 0 ? 1 : 0),
-    [searchTerm, filters.nam.length],
+    () =>
+      atListBrowse ? (searchTerm ? 1 : 0) + (filters.nam_thang.length > 0 ? 1 : 0) : 0,
+    [atListBrowse, searchTerm, filters.nam_thang.length],
   );
 
   const handleClearAllFilters = () => {
     setSearchTerm('');
-    setFilter('nam', []);
+    setFilter('nam_thang', []);
   };
 
-  const renderFilters = (
+  const renderFilters = atListBrowse ? (
     <FilterChipMultiSelect
-      options={namOptions}
-      value={filters.nam}
-      onChange={(val) => setFilter('nam', val)}
+      options={namThangOptions}
+      value={filters.nam_thang}
+      onChange={(val) => setFilter('nam_thang', val)}
       icon={Calendar}
-      placeholder={t('moiNgayMotLoiDayBacHo.dm.toolbar.nam')}
-      className="w-full sm:w-[200px]"
+      placeholder={t('moiNgayMotLoiDayBacHo.dm.toolbar.namThang')}
+      className="w-full sm:w-[220px]"
     />
-  );
+  ) : null;
 
   const filterGroups = useMemo(
-    () => [
-      {
-        key: 'nam',
-        label: t('moiNgayMotLoiDayBacHo.dm.toolbar.nam'),
-        icon: Calendar,
-        options: namOptions,
-        value: filters.nam,
-        onChange: (val: string[]) => setFilter('nam', val),
-      },
-    ],
-    [namOptions, filters.nam, setFilter, t],
+    () =>
+      atListBrowse
+        ? [
+            {
+              key: 'nam_thang',
+              label: t('moiNgayMotLoiDayBacHo.dm.toolbar.namThang'),
+              icon: Calendar,
+              options: namThangOptions,
+              value: filters.nam_thang,
+              onChange: (val: string[]) => setFilter('nam_thang', val),
+            },
+          ]
+        : [],
+    [atListBrowse, namThangOptions, filters.nam_thang, setFilter, t],
   );
 
   const renderActions = canCreate ? (
@@ -111,7 +129,9 @@ const MoiNgayMotLoiDayBacHoToolbar: React.FC<Props> = ({
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
-      showBack
+      showBack={drillActive}
+      onBack={drillActive ? onBrowseBack : undefined}
+      hideSearch={!atListBrowse}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
     />

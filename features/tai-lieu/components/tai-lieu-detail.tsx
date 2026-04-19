@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, ExternalLink, Edit, Trash2, UserRound } from 'lucide-react';
+import { FileText, ExternalLink, Edit, Trash2, UserRound, Briefcase } from 'lucide-react';
 import type { TaiLieu } from '../core/types';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../components/shared/GenericDrawer';
 import DetailSection from '../../../components/shared/DetailSection';
@@ -77,6 +77,11 @@ const TaiLieuDetail: React.FC<Props> = ({
 
         <DetailSection title={t('taiLieu.dm.detail.basicInfo')} icon={<FileText size={14} />} variant="primary">
           <DetailFieldGrid>
+            <DetailField
+              label={t('taiLieu.dm.form.chucVu')}
+              value={data.ten_chuc_vu?.trim() ? data.ten_chuc_vu : data.id_chuc_vu ? `id ${data.id_chuc_vu}` : '—'}
+              icon={<Briefcase size={12} />}
+            />
             <DetailField label={t('taiLieu.dm.form.nhomTaiLieu')} value={data.nhom_tai_lieu || '—'} />
             <DetailField label={t('taiLieu.dm.form.tenTaiLieu')} value={data.ten_tai_lieu} />
             {data.link ? (

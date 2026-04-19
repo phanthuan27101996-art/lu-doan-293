@@ -62,7 +62,7 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
 ];
 
 const initialFilters: MoiTuanMotDieuLuatFilters = {
-  nam: [],
+  nam_thang: [],
 };
 
 export const useMoiTuanMotDieuLuatStore = createGenericStore<MoiTuanMotDieuLuatFilters>(

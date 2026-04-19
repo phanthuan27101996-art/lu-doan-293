@@ -21,10 +21,12 @@ import { resolveQuanNhanIdForUser } from '@/lib/resolve-quan-nhan-for-auth-user'
 interface Props {
   initialData?: KhoNhac | null;
   existingItems: KhoNhac[];
+  /** Khi tạo mới từ danh sách đã drill vào một bộ sưu tập có tên */
+  defaultBoSuuTap?: string;
   onClose: () => void;
 }
 
-const KhoNhacForm: React.FC<Props> = ({ initialData, existingItems, onClose }) => {
+const KhoNhacForm: React.FC<Props> = ({ initialData, existingItems, defaultBoSuuTap, onClose }) => {
   const { t } = useTranslation();
   const isEdit = !!initialData;
   const createMutation = useCreateKhoNhac(onClose);
@@ -69,6 +71,13 @@ const KhoNhacForm: React.FC<Props> = ({ initialData, existingItems, onClose }) =
       setValue('id_nguoi_tao', '', { shouldValidate: true });
     }
   }, [initialData, currentQuanNhanId, setValue]);
+
+  useEffect(() => {
+    if (initialData) return;
+    if (defaultBoSuuTap) {
+      setValue('bo_suu_tap', defaultBoSuuTap, { shouldValidate: true });
+    }
+  }, [initialData, defaultBoSuuTap, setValue]);
 
   const onSubmit = async (data: KhoNhacFormValues) => {
     const creatorId = isEdit

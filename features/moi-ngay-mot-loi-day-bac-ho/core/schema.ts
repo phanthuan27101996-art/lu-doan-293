@@ -21,6 +21,12 @@ export const moiNgayMotLoiDayBacHoFormSchema = z.object({
     .string()
     .trim()
     .refine(urlOrDataOrEmpty, { message: i18n.t('moiNgayMotLoiDayBacHo.dm.validation.tepInvalid') }),
+  link: z
+    .string()
+    .trim()
+    .refine((s) => s === '' || /^https?:\/\/.+/i.test(s), {
+      message: i18n.t('moiNgayMotLoiDayBacHo.dm.validation.linkInvalid'),
+    }),
   id_nguoi_tao: z.string().trim().optional().or(z.literal('')),
 });
 

@@ -9,8 +9,13 @@ import { BTN_ADD } from '../../../lib/button-labels';
 import FilterChipMultiSelect from '../../../components/shared/FilterChipMultiSelect';
 import type { KhoVideo } from '../core/types';
 
+export type KhoVideoBrowseStep = 'bo_suu_tap' | 'list';
+
 interface Props {
   items: KhoVideo[];
+  itemsForBoSuuTapFilter?: KhoVideo[];
+  browseStep?: KhoVideoBrowseStep;
+  onBrowseBack?: () => void;
   onAdd: () => void;
   onExport: () => void;
   onImport: () => void;
@@ -23,6 +28,9 @@ interface Props {
 
 const KhoVideoToolbar: React.FC<Props> = ({
   items,
+  itemsForBoSuuTapFilter,
+  browseStep = 'list',
+  onBrowseBack,
   onAdd,
   onExport,
   onImport,
@@ -46,9 +54,11 @@ const KhoVideoToolbar: React.FC<Props> = ({
     clearSelection,
   } = useKhoVideoStore();
 
+  const boSuuTapScope = itemsForBoSuuTapFilter ?? items;
+
   const boSuuTapOptions = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const row of items) {
+    for (const row of boSuuTapScope) {
       const key = (row.bo_suu_tap ?? '').trim() || '__empty__';
       counts[key] = (counts[key] ?? 0) + 1;
     }
@@ -59,11 +69,15 @@ const KhoVideoToolbar: React.FC<Props> = ({
         value,
         count: counts[value] ?? 0,
       }));
-  }, [items, t]);
+  }, [boSuuTapScope, t]);
+
+  const drillActive = items.length > 0;
+  const atListBrowse = !drillActive || browseStep === 'list';
 
   const activeFilterCount = useMemo(
-    () => (searchTerm ? 1 : 0) + (filters.bo_suu_tap.length > 0 ? 1 : 0),
-    [searchTerm, filters.bo_suu_tap.length],
+    () =>
+      atListBrowse ? (searchTerm ? 1 : 0) + (filters.bo_suu_tap.length > 0 ? 1 : 0) : 0,
+    [atListBrowse, searchTerm, filters.bo_suu_tap.length],
   );
 
   const handleClearAllFilters = () => {
@@ -71,7 +85,7 @@ const KhoVideoToolbar: React.FC<Props> = ({
     setFilter('bo_suu_tap', []);
   };
 
-  const renderFilters = (
+  const renderFilters = atListBrowse ? (
     <FilterChipMultiSelect
       options={boSuuTapOptions}
       value={filters.bo_suu_tap}
@@ -80,20 +94,23 @@ const KhoVideoToolbar: React.FC<Props> = ({
       placeholder={t('khoVideo.dm.toolbar.boSuuTap')}
       className="w-full sm:w-[240px]"
     />
-  );
+  ) : null;
 
   const filterGroups = useMemo(
-    () => [
-      {
-        key: 'bo_suu_tap',
-        label: t('khoVideo.dm.toolbar.boSuuTap'),
-        icon: FolderOpen,
-        options: boSuuTapOptions,
-        value: filters.bo_suu_tap,
-        onChange: (val: string[]) => setFilter('bo_suu_tap', val),
-      },
-    ],
-    [boSuuTapOptions, filters.bo_suu_tap, setFilter, t],
+    () =>
+      atListBrowse
+        ? [
+            {
+              key: 'bo_suu_tap',
+              label: t('khoVideo.dm.toolbar.boSuuTap'),
+              icon: FolderOpen,
+              options: boSuuTapOptions,
+              value: filters.bo_suu_tap,
+              onChange: (val: string[]) => setFilter('bo_suu_tap', val),
+            },
+          ]
+        : [],
+    [atListBrowse, boSuuTapOptions, filters.bo_suu_tap, setFilter, t],
   );
 
   const mobileActions = useMemo(() => {
@@ -170,7 +187,9 @@ const KhoVideoToolbar: React.FC<Props> = ({
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}
       onResetColumns={resetColumns}
-      showBack
+      showBack={drillActive}
+      onBack={drillActive ? onBrowseBack : undefined}
+      hideSearch={!atListBrowse}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}
     />

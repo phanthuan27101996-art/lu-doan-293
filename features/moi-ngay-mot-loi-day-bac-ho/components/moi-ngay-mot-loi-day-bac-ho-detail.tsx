@@ -145,6 +145,22 @@ const MoiNgayMotLoiDayBacHoDetail: React.FC<Props> = ({
             ) : (
               <DetailField label={t('moiNgayMotLoiDayBacHo.dm.form.tepDinhKem')} value="—" />
             )}
+            {data.link ? (
+              <div className="col-span-full">
+                <p className="text-xs font-medium text-muted-foreground mb-1">{t('moiNgayMotLoiDayBacHo.dm.form.link')}</p>
+                <a
+                  href={data.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline break-all"
+                >
+                  <ExternalLink size={14} aria-hidden />
+                  {data.link}
+                </a>
+              </div>
+            ) : (
+              <DetailField label={t('moiNgayMotLoiDayBacHo.dm.form.link')} value="—" />
+            )}
             <DetailField
               label={t('moiNgayMotLoiDayBacHo.dm.detail.nguoiTao')}
               value={

@@ -3,6 +3,7 @@ import type { TaiLieuFormValues } from '../core/schema';
 
 export function getDefaultTaiLieuFormValues(): TaiLieuFormValues {
   return {
+    id_chuc_vu: '',
     nhom_tai_lieu: '',
     ten_tai_lieu: '',
     link: '',
@@ -13,6 +14,7 @@ export function getDefaultTaiLieuFormValues(): TaiLieuFormValues {
 
 export function taiLieuToFormValues(t: TaiLieu): TaiLieuFormValues {
   return {
+    id_chuc_vu: t.id_chuc_vu ?? '',
     nhom_tai_lieu: t.nhom_tai_lieu ?? '',
     ten_tai_lieu: t.ten_tai_lieu,
     link: t.link ?? '',
